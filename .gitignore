@@ -1,0 +1,36 @@
+# Gradle
+.gradle/
+build/
+weave/.gradle/
+weave/build/
+!gradle/wrapper/gradle-wrapper.jar
+!weave/gradle/wrapper/gradle-wrapper.jar
+
+# Minecraft run directories & logs
+run/
+logs/
+crash-reports/
+*.log
+*.hprof
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+out/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Built jars
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!weave/gradle/wrapper/gradle-wrapper.jar

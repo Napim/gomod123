@@ -1,0 +1,394 @@
+buildscript {
+    repositories {
+        maven { url = "https://maven.minecraftforge.net" }
+        maven { url = "https://repo.spongepowered.org/maven" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT"
+        classpath "org.spongepowered:mixingradle:0.6-SNAPSHOT"
+    }
+}
+
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: "org.spongepowered.mixin"
+
+def gomodVersionPropsFile = file("src/main/resources/gomod.version.properties")
+def gomodVersion = "1.0.0"
+if (gomodVersionPropsFile.exists()) {
+    def gomodVersionProps = new Properties()
+    gomodVersionPropsFile.withInputStream { gomodVersionProps.load(it) }
+    gomodVersion = gomodVersionProps.getProperty("version", gomodVersion).trim()
+}
+version = gomodVersion
+group = "me.napim"
+def publicRelease = (findProperty("publicRelease") ?: "true").toBoolean()
+archivesBaseName = publicRelease ? "gomod123-forge" : "gomod123-forge-devbuild"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = "run"
+    mappings = "stable_22"
+    coreMod = "me.napim.gomod.coremod.GomodCoremod"
+}
+
+repositories {
+    maven { url = "https://repo.spongepowered.org/maven" }
+    mavenCentral()
+}
+
+configurations {
+    embed
+    bundledLibs
+    relocator
+}
+
+dependencies {
+    // Mixin 0.8.x: OW2 ASM + Guava 21+ (MC 1.8.9 only has Guava 17 on the game classpath at tweaker init).
+    // 33.x fixes CVE-2023-2976 / CVE-2018-10237 reported by dependency scanners on older bundled Guava.
+    def asmVersion = "9.6"
+    def guavaVersion = "33.4.0-jre"
+    compile("org.spongepowered:mixin:0.8.5") {
+        exclude module: "launchwrapper"
+        exclude module: "guava"
+        exclude module: "gson"
+        exclude module: "commons-io"
+        exclude module: "log4j-core"
+    }
+    compile "com.google.guava:guava:${guavaVersion}"
+    bundledLibs("org.spongepowered:mixin:0.8.5") {
+        exclude module: "launchwrapper"
+        exclude module: "guava"
+        exclude module: "gson"
+        exclude module: "commons-io"
+        exclude module: "log4j-core"
+    }
+    bundledLibs "org.ow2.asm:asm:${asmVersion}"
+    bundledLibs "org.ow2.asm:asm-commons:${asmVersion}"
+    bundledLibs "org.ow2.asm:asm-tree:${asmVersion}"
+    bundledLibs "org.ow2.asm:asm-util:${asmVersion}"
+    bundledLibs "com.google.guava:guava:${guavaVersion}"
+    relocator "org.ow2.asm:asm:${asmVersion}"
+    relocator "org.ow2.asm:asm-commons:${asmVersion}"
+    compile "org.jetbrains:annotations:24.0.1"
+    compile "org.java-websocket:Java-WebSocket:1.5.3"
+    embed "org.java-websocket:Java-WebSocket:1.5.3"
+    // Java-WebSocket calls LoggerFactory at runtime; relocated into me.napim.gomod.shadow.slf4j during bundleLibs.
+    compile "org.slf4j:slf4j-api:1.7.36"
+    embed "org.slf4j:slf4j-api:1.7.36"
+    embed "org.slf4j:slf4j-nop:1.7.36"
+
+    testCompile "junit:junit:4.13.2"
+}
+
+// MixinGradle auto-wires configs listed in the jar manifest ("MixinConfigs": "gomod.mixins.json").
+// An explicit `add sourceSets.main, "gomod.mixins.json"` duplicates registration and triggers:
+// "Duplicate refmap name gomod.mixins.json specified for sourceSet main".
+mixin {
+    defaultObfuscationEnv "searge"
+}
+
+// Strip noise that automated scanners misread (Guava proguard configs, Java 9+ module descriptors).
+def bundledJarExcludes = [
+        "module-info.class",
+        "**/module-info.class",
+        "META-INF/*.SF",
+        "META-INF/*.DSA",
+        "META-INF/*.RSA",
+        "META-INF/maven/**",
+        "META-INF/proguard/**",
+        "META-INF/versions/**",
+]
+
+jar {
+    manifest {
+        attributes(
+            "FMLCorePlugin": "me.napim.gomod.coremod.GomodCoremod",
+            "FMLCorePluginContainsFMLMod": "true",
+            "MixinConfigs": "gomod.mixins.json",
+            "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+            "TweakOrder": "0",
+            "FMLAT": "gomod_at.cfg"
+        )
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+task generateGomodReleaseBuild {
+    def outDir = file("$buildDir/generated/sources/gomodRelease/me/napim/gomod")
+    def outFile = new File(outDir, "GomodReleaseBuild.java")
+    inputs.property "publicRelease", publicRelease
+    outputs.file outFile
+    doLast {
+        outDir.mkdirs()
+        outFile.text = """package me.napim.gomod;
+
+/**
+ * Compile-time release flavor (generated — do not edit).
+ * {@code publicRelease} in gradle.properties; dev build: {@code -PpublicRelease=false}.
+ */
+public final class GomodReleaseBuild {
+    public static final boolean PUBLIC_RELEASE = ${publicRelease};
+    private GomodReleaseBuild() {}
+}
+"""
+    }
+}
+
+sourceSets.main.java.srcDir "$buildDir/generated/sources/gomodRelease"
+
+// Internal-only sources; public JAR uses stubs/alternate classes from src/publicRelease/java.
+def publicReleaseMainExclusions = [
+        "me/napim/gomod/InternalDcCommands.java",
+        "me/napim/gomod/features/DcMirrorBridge.java",
+        "me/napim/gomod/features/DcMirrorGateway.java",
+        "me/napim/gomod/features/InternalAdvancedPerspectiveAllowlist.java",
+        "me/napim/gomod/gui/DcMirrorSettingsGUI.java",
+        "me/napim/gomod/gui/ApiKeyGUI.java",
+        "me/napim/gomod/util/DcMirrorFormatter.java",
+        "me/napim/gomod/command/DcTalkCommand.java",
+        "me/napim/gomod/command/DcRdCommand.java",
+        "me/napim/gomod/command/DcDdmCommand.java",
+]
+
+// Keep compilation and the published sources archive on the exact same, live source selection.
+def releaseMainJavaSources = fileTree("src/main/java") {
+    include "**/*.java"
+    if (publicRelease) {
+        publicReleaseMainExclusions.each { exclude it }
+    }
+}
+def releaseFlavorJavaSources = publicRelease
+        ? fileTree("src/publicRelease/java") { include "**/*.java" }
+        : files()
+// Lunar-only integrations live in the Weave source tree. These neutral bridges let shared
+// sources compile in Forge without pulling Lunar classes or behavior into the Forge artifact.
+def forgeCompatibilityJavaSources = fileTree("src/forge/java") {
+    include "**/*.java"
+}
+def generatedReleaseJavaSources = fileTree("$buildDir/generated/sources/gomodRelease") {
+    include "**/*.java"
+}
+def releaseJavaSources = files(
+        releaseMainJavaSources,
+        releaseFlavorJavaSources,
+        forgeCompatibilityJavaSources,
+        generatedReleaseJavaSources
+)
+
+// Force compilation from live sources instead of stale ForgeGradle-generated copies.
+compileJava {
+    dependsOn generateGomodReleaseBuild
+    setSource(releaseJavaSources)
+    options.encoding = "UTF-8"
+}
+
+compileTestJava {
+    options.encoding = "UTF-8"
+}
+
+task compileRelocator(type: JavaCompile) {
+    source = files("tools/RelocateEmbeddedLibs.java")
+    classpath = configurations.relocator
+    destinationDir = file("$buildDir/classes/relocator")
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+    options.encoding = "UTF-8"
+}
+
+// ForgeGradle 2's obfuscated source pipeline can swallow RangeExtractor exceptions and still produce a
+// successful, nearly empty sources JAR. Publish the selected live sources directly instead.
+task releaseSourcesJar(type: Jar, dependsOn: generateGomodReleaseBuild) {
+    group = "build"
+    description = "Archives the exact Java sources selected for this release flavor"
+    archiveName = "${archivesBaseName}-${version}-sources.jar"
+    destinationDir = file("${buildDir}/libs")
+    includeEmptyDirs = false
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    from(releaseJavaSources)
+}
+
+def minimumReleaseSourceCount = (findProperty("minimumReleaseSourceCount") ?: "500") as int
+
+task verifyReleaseSourcesJar(dependsOn: releaseSourcesJar) {
+    group = "verification"
+    description = "Fails when the release sources JAR is incomplete or contains the wrong source set"
+    inputs.files(releaseJavaSources)
+    inputs.file { releaseSourcesJar.archivePath }
+
+    doLast {
+        File sourceArchive = releaseSourcesJar.archivePath
+        if (!sourceArchive.isFile()) {
+            throw new GradleException("Missing sources JAR: ${sourceArchive}")
+        }
+
+        def expectedEntries = new LinkedHashSet<String>()
+        [
+                [root: file("src/main/java"), tree: releaseMainJavaSources],
+                [root: file("src/publicRelease/java"), tree: releaseFlavorJavaSources],
+                [root: file("src/forge/java"), tree: forgeCompatibilityJavaSources],
+                [root: file("$buildDir/generated/sources/gomodRelease"), tree: generatedReleaseJavaSources],
+        ].each { sourceSpec ->
+            sourceSpec.tree.files.each { sourceFile ->
+                String relative = sourceSpec.root.toPath().relativize(sourceFile.toPath()).toString().replace('\\', '/')
+                expectedEntries.add(relative)
+            }
+        }
+
+        def actualEntries = new LinkedHashSet<String>()
+        java.util.zip.ZipFile zip = new java.util.zip.ZipFile(sourceArchive)
+        try {
+            def entries = zip.entries()
+            while (entries.hasMoreElements()) {
+                def entry = entries.nextElement()
+                if (!entry.directory && entry.name.endsWith(".java")) {
+                    actualEntries.add(entry.name)
+                }
+            }
+        } finally {
+            zip.close()
+        }
+
+        if (actualEntries.size() < minimumReleaseSourceCount) {
+            throw new GradleException(
+                    "Sources JAR has only ${actualEntries.size()} Java files; expected at least ${minimumReleaseSourceCount}"
+            )
+        }
+
+        def missingEntries = new LinkedHashSet<String>(expectedEntries)
+        missingEntries.removeAll(actualEntries)
+        def unexpectedEntries = new LinkedHashSet<String>(actualEntries)
+        unexpectedEntries.removeAll(expectedEntries)
+        if (!missingEntries.isEmpty() || !unexpectedEntries.isEmpty()) {
+            throw new GradleException(
+                    "Sources JAR does not match the selected release sources. "
+                            + "Missing (${missingEntries.size()}): ${missingEntries.take(10)}; "
+                            + "unexpected (${unexpectedEntries.size()}): ${unexpectedEntries.take(10)}"
+            )
+        }
+
+        [
+                "me/napim/gomod/GomodForgeMod.java",
+                "me/napim/gomod/GomodReleaseBuild.java",
+                "me/napim/gomod/features/ConfigManager.java",
+        ].each { requiredEntry ->
+            if (!actualEntries.contains(requiredEntry)) {
+                throw new GradleException("Sources JAR is missing required entry: ${requiredEntry}")
+            }
+        }
+
+        logger.lifecycle("Verified ${sourceArchive.name}: ${actualEntries.size()} Java source files")
+    }
+}
+
+// Leave ForgeGradle's legacy task as a compatibility name, but do not let its broken rangemap pipeline run.
+// `gradlew sourceJar` still builds and verifies the explicit archive through this dependency.
+sourceJar {
+    enabled = false
+    setDependsOn([verifyReleaseSourcesJar])
+}
+
+tasks.matching { it.name == "sourceMainJava" }.all {
+    enabled = false
+}
+
+// ForgeGradle's RangeExtractor catches some failures internally. If this legacy task is ever invoked again,
+// compare its own progress log with the promised input count so a partial extraction cannot report success.
+tasks.matching { it.name == "extractRangemapReplacedMain" }.all {
+    outputs.upToDateWhen { false }
+    doLast {
+        File rangeLog = file("$buildDir/taskLogs/${name}.log")
+        String text = rangeLog.isFile() ? rangeLog.getText("UTF-8") : ""
+        def plannedMatch = text =~ /Processing\s+(\d+)\s+files/
+        int planned = plannedMatch.find() ? plannedMatch.group(1).toInteger() : -1
+        int processed = text.readLines().count { it.startsWith("processing ") }
+        if (planned < 1 || processed < planned) {
+            throw new GradleException(
+                    "Incomplete rangemap extraction: processed ${processed} of ${planned < 0 ? 'unknown' : planned} files"
+            )
+        }
+    }
+}
+
+assemble.dependsOn verifyReleaseSourcesJar
+
+// Mixin and third-party libraries must not be in the jar when reobfJar runs — merge them afterwards
+// and relocate Java-WebSocket + SLF4J into me.napim.gomod.shadow.* to prevent classpath collisions.
+task bundleLibs(type: Jar, dependsOn: [reobfJar, compileRelocator]) {
+    group = "build"
+    description = "Reobfed gomod jar with Sponge Mixin bundled and embedded libs relocated"
+    archiveName = "${archivesBaseName}-${version}-staged.jar"
+    destinationDir = file("${buildDir}/libs")
+
+    from {
+        zipTree(file("${buildDir}/libs/${archivesBaseName}-${version}.jar"))
+    }
+    from(configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }) {
+        bundledJarExcludes.each { exclude it }
+    }
+    from(configurations.bundledLibs.collect { it.isDirectory() ? it : zipTree(it) }) {
+        bundledJarExcludes.each { exclude it }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest.from(jar.manifest)
+
+    doLast {
+        File stagedJar = archivePath
+        javaexec {
+            main = "RelocateEmbeddedLibs"
+            classpath = files(compileRelocator.destinationDir, configurations.relocator)
+            args(stagedJar.absolutePath, stagedJar.absolutePath)
+        }
+    }
+}
+
+task publishBundledJar(dependsOn: bundleLibs) {
+    group = "build"
+    description = "Writes the final mods-folder jar (reobfed mod + bundled Mixin + relocated libs)"
+    doLast {
+        def finalJar = file("${buildDir}/libs/${archivesBaseName}-${version}.jar")
+        def staged = file("${buildDir}/libs/${archivesBaseName}-${version}-staged.jar")
+        if (!staged.exists()) {
+            throw new GradleException("Missing staged jar: ${staged}")
+        }
+        finalJar.delete()
+        if (!staged.renameTo(finalJar)) {
+            throw new GradleException("Failed to publish ${finalJar}")
+        }
+    }
+}
+
+build.dependsOn publishBundledJar
+
+// Weave Loader 1.3.4 needs modern Gradle, so it has an isolated build while
+// remaining reachable from the main project as `gradlew buildWeavePublic` or `gradlew buildWeaveDev`.
+task buildWeavePublic(type: Exec) {
+    group = "build"
+    description = "Builds the public native Weave 1.3.4 jar for Lunar Client"
+    workingDir file("weave")
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        commandLine "cmd", "/c", "gradlew.bat", "build", "-PpublicRelease=true", "--console=plain"
+    } else {
+        commandLine "./gradlew", "build", "-PpublicRelease=true", "--console=plain"
+    }
+}
+
+task buildWeaveDev(type: Exec) {
+    group = "build"
+    description = "Builds the dev/internal native Weave 1.3.4 jar for Lunar Client"
+    workingDir file("weave")
+    if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        commandLine "cmd", "/c", "gradlew.bat", "build", "-PpublicRelease=false", "--console=plain"
+    } else {
+        commandLine "./gradlew", "build", "-PpublicRelease=false", "--console=plain"
+    }
+}
+
+task buildWeave {
+    group = "build"
+    description = "Alias for buildWeavePublic"
+    dependsOn buildWeavePublic
+}
