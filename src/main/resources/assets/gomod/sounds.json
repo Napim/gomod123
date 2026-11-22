@@ -1,0 +1,48 @@
+{
+  "witch.idle": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_idle1" },
+      { "name": "mob/witch/witch_idle2" },
+      { "name": "mob/witch/witch_idle3" }
+    ]
+  },
+  "witch.idle3": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_idle3" }
+    ]
+  },
+  "witch.idle4": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_idle4" }
+    ]
+  },
+  "witch.hurt": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_hurt1" },
+      { "name": "mob/witch/witch_hurt2" }
+    ]
+  },
+  "witch.death": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_death1" },
+      { "name": "mob/witch/witch_death2" }
+    ]
+  },
+  "witch.drink": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_drink1" }
+    ]
+  },
+  "witch.throw": {
+    "category": "hostile",
+    "sounds": [
+      { "name": "mob/witch/witch_throw1" }
+    ]
+  }
+}

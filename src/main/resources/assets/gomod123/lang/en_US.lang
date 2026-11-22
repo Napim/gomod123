@@ -1,0 +1,15 @@
+key.categories.gomod123=gomod123
+key.gomod123.radial_menu=Wheel modules
+key.gomod123.chat_movement.open=Movement chat
+key.gomod123.tab_killers.toggle=Tab victims
+key.gomod123.ask_for_loot=Ask for Loot
+key.gomod123.player_caller=Player Caller
+key.gomod123.chest_routes.place_feet=Chest Routes: Place checkpoint at feet
+key.gomod123.chest_routes.toggle_render=Chest Routes: Toggle rendering
+key.gomod123.chest_routes.undo=Chest Routes: Undo draft
+key.gomod123.perspective.reset_distance=Adv. render distance
+key.gomod123.perspective.zoom_hold=Adv. perspective: Zoom hold key
+key.gomod123.barrier_visibility.toggle=Barrier blocks
+key.gomod123.self_opacity.toggle=Self opacity
+key.gomod123.blocks_finder.toggle=Blocks finder
+key.gomod123.blocks_finder.world_opacity=Blocks finder: World opacity

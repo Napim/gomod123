@@ -1,0 +1,680 @@
+{
+  "emojis": {
+    "1": "<:Rogue:1274367657289978037>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+    "X, P2: Because of KB on it's main weapon, `Resistance` is harder to put into work plus KB makes `Regen` even better because of long distancing.\n",
+    "I..IX: You'll typically switch the KB main weapon for a +6 damage one, so `Res` > `Regen` > `Speed` best by default."
+  ]
+  },
+  "1": {
+    "description": [
+      "Unlock: 30,000 coins | Requires Hypixel Level 20"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Rogue"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "271_0"
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "2": {
+    "description": [
+      "Cost: 80"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Rogue"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "268_0"
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback III", "1 use"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "3": {
+    "description": [
+      "Cost: 400"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Rogue",
+        "enchantments": ["Feather Falling II"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "268_0"
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback III", "1 use"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "4": {
+    "description": [
+      "Cost: 1000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Rogue",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"]
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "268_0"
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback III", "1 use"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "5": {
+    "description": [
+      "Cost: 3000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"]
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "268_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback IV", "1 use"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "6": {
+    "description": [
+      "Cost: 12,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "2"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "268_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback IV", "1 use"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "7": {
+    "description": [
+      "Cost: 50,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "2"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "272_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback IV", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Punch I", "3 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "8": {
+    "description": [
+      "Cost: 100,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "4"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "2"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "272_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback V", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Power I", "Punch I", "4 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "9": {
+    "description": [
+      "Cost: 250,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "5"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "2"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "272_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback V", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Power I", "Punch II", "4 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "10": {
+    "description": [
+      "Cost: 1,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "5"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection I", "Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "251_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback V", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Power III", "Punch III", "4 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_resistance.png",
+      "kill_effect_speed.png"  
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "5"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection I", "Feather Falling III"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "251_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback V", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Power III", "Punch III", "4 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_resistance.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 | Requires 500 wins & 5,000 kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "5"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Rogue"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection II", "Feather Falling IV"]
+      },
+      {
+        "name": "",
+        "image": "373_16392",
+        "potion": ["Weakness III (0:09)"],
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "373_24587",
+        "potion": ["Speed I (0:09)", "Invisibility II (0:09)"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "251_0",
+        "enchantments": ["Knockback I"]
+      },
+      {
+        "name": "",
+        "image": "268_59",
+        "enchantments": ["Knockback V", "1 use"]
+      },
+      {
+        "name": "",
+        "image": "261_370",
+        "enchantments": ["Power III", "Punch III", "4 uses"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_resistance.png",
+      "kill_effect_speed.png"
+    ]
+  }
+}

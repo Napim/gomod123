@@ -1,0 +1,522 @@
+{
+  "emojis": {
+    "1": "<:Ranger:1274367437688672266>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+    "Long-distance fighting kit, which means long-distance kill effects, thus, `Regen` and `Flame` are best."
+    ],
+    "EXP info": [
+      "1 minute played = 1 EXP",
+      "1 kill/assist(+40%) = 2 EXP",
+      "1 win = 10 EXP"
+    ]
+  },
+  "1": {
+    "description": [
+      "Requires 1000 bow kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "15"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_Ranger",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "2": {
+    "description": [
+      "100 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "16"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_Ranger",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "3": {
+    "description": [
+      "250 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "17"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_Ranger",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "4": {
+    "description": [
+      "500 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "18"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "5": {
+    "description": [
+      "1,000 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "19"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "6": {
+    "description": [
+      "1,500 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "20"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_Ranger",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "7": {
+    "description": [
+      "2,000 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "21"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "8": {
+    "description": [
+      "2,500 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "22"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "9": {
+    "description": [
+      "5,000 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "23"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "10": {
+    "description": [
+      "10,000 Kit EXP"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "24"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I", "Punch I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000 coins"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "24"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I", "Punch I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 coins | Requires 500 wins & 5,000 kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "262_0",
+        "amount": "28"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "316_0"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "271_0",
+        "enchantments": ["Unbreaking III"]
+      },
+      {
+        "name": "",
+        "image": "261_0",
+        "enchantments": ["Power I", "Punch I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_regen.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  }
+}

@@ -1,0 +1,643 @@
+{
+  "emojis": {
+    "1": "<:Pigman:1276674277168648283>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+    "`Res` > `Regen` > `Speed` best by default."
+  ]
+  },
+  "1": {
+    "description": [
+      "Unlock: 10,000 coins | Requires Hypixel Level 10"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "2": {
+    "description": [
+      "Cost: 80"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "3": {
+    "description": [
+      "Cost: 400"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "4": {
+    "description": [
+      "Cost: 1000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "5": {
+    "description": [
+      "Cost: 3000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness I", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "6": {
+    "description": [
+      "Cost: 12,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness I", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "7": {
+    "description": [
+      "Cost: 50,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Pigman",
+        "enchantments": ["Protection II", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness I", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "8": {
+    "description": [
+      "Cost: 100,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "314_0",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Fire Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Pigman",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness I", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "9": {
+    "description": [
+      "Cost: 250,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "314_0",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Fire Protection II", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "317_0",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness I", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "10": {
+    "description": [
+      "Cost: 1,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "314_0",
+        "enchantments": ["Protection II", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Fire Protection III", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "317_0",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness II", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "314_0",
+        "enchantments": ["Protection II", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Fire Protection III", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "317_0",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness II", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 | Requires 500 wins & 5,000 kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "314_0",
+        "enchantments": ["Protection III", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Pigman",
+        "enchantments": ["Fire Protection III", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Pigman",
+        "enchantments": ["Unbreaking I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "317_0",
+        "enchantments": ["Protection I", "Unbreaking I"]
+      },
+      {
+        "name": "",
+        "image": "373_16396",
+        "potion": ["Harming I"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "283_0",
+        "enchantments": ["Sharpness II", "Unbreaking X"]
+      },
+      {
+        "name": "",
+        "image": "383_57",
+        "enchantments": ["Gold Helmet", "Gold Chestplate", "Gold Sword"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  }
+}

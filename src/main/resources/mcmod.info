@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "gomod123",
+    "name": "gomod123",
+    "description": "Hypixel Blitz Survival Games utility, HUD, and QoL mod for Minecraft 1.8.9.",
+    "version": "1.0.0",
+    "mcversion": "1.8.9",
+    "url": "https://github.com/Napim/gomod123",
+    "authorList": ["napim"],
+    "credits": "",
+    "logoFile": "icon.png"
+  }
+]

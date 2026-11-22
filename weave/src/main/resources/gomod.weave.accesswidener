@@ -1,0 +1,12 @@
+accessWidener v2 mcp-named
+
+accessible field net/minecraft/client/Minecraft timer Lnet/minecraft/util/Timer;
+accessible method net/minecraft/client/renderer/WorldRenderer getColorIndex (I)I
+accessible field net/minecraft/client/gui/GuiButton width I
+accessible field net/minecraft/client/gui/GuiButton height I
+accessible field net/minecraft/client/gui/GuiTextField width I
+mutable field net/minecraft/client/gui/GuiTextField width I
+accessible field net/minecraft/client/gui/GuiTextField height I
+mutable field net/minecraft/client/gui/GuiTextField height I
+accessible field net/minecraft/inventory/Slot slotIndex I
+accessible method net/minecraft/client/renderer/entity/RendererLivingEntity addLayer (Lnet/minecraft/client/renderer/entity/layers/LayerRenderer;)Z

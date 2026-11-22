@@ -1,0 +1,635 @@
+{
+  "emojis": {
+    "1": "<:Horsetamer:1276667734410793013>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+    "`Regen` is the most effective on Horse/Donkey to chaining-kills during the game.\n With the same chaining-kills playstyle, `Flame` could also be useful as a 3rd kill effect option."
+  ]
+  },
+  "1": {
+    "description": [
+      "Unlock: 100,000 coins | Requires Hypixel Level 45"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Horsetamer"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "271_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "2": {
+    "description": [
+      "Cost: 80"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "271_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "3": {
+    "description": [
+      "Cost: 400"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "275_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "4": {
+    "description": [
+      "Cost: 1000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "275_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "5": {
+    "description": [
+      "Cost: 3000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "305_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "275_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "6": {
+    "description": [
+      "Cost: 12,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "3"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "275_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "7": {
+    "description": [
+      "Cost: 50,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "4"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "309_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "258_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "8": {
+    "description": [
+      "Cost: 100,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "4"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "258_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "9": {
+    "description": [
+      "Cost: 250,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "6"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0",
+        "enchantments": ["Protection I"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "258_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "10": {
+    "description": [
+      "Cost: 1,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "8"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "279_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "8"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "279_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 | Requires 500 wins & 5,000 kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "image": "383_100"
+      },
+      {
+        "name": "",
+        "image": "260_0",
+        "amount": "8"
+      },
+      {
+        "name": "",
+        "image": "329_0"
+      },
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "298_0_Horsetamer"
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Horsetamer",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Horsetamer",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "313_0",
+        "enchantments": ["Protection II"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "279_0",
+        "enchantments": ["Infinity I"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_flame.png"
+    ]
+  }
+}

@@ -1,0 +1,604 @@
+{
+  "emojis": {
+    "1": "<:Shark:1276657769310847087>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+        "`Res` > `Regen` > `Speed` best by default."
+    ]
+  },
+  "1": {
+    "description": [
+      "Unlock: 30,000 coins | Requires Hypixel Level 40"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection I", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness II"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "2": {
+    "description": [
+      "Cost: 80"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection I", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness II"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "3": {
+    "description": [
+      "Cost: 400"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection II", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness II"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "4": {
+    "description": [
+      "Cost: 1000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection II", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"]
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness III"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "5": {
+    "description": [
+      "Cost: 3000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection II", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness III"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "6": {
+    "description": [
+      "Cost: 12,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection III", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness III"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "7": {
+    "description": [
+      "Cost: 50,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection III", "Depth Rider I", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "299_0_Shark",
+        "enchantments": ["Protection III"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness III"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "8": {
+    "description": [
+      "Cost: 100,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection III", "Depth Rider II", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness III"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "9": {
+    "description": [
+      "Cost: 250,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection IV", "Depth Rider II", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0"
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "2"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness IV"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "10": {
+    "description": [
+      "Cost: 1,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection V", "Depth Rider II", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness V"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection V", "Depth Rider II", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection I"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "3"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness V"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 | Requires 500 wins & 5,000 kills"
+    ],
+    "items": [
+      {
+        "name": "",
+        "type": "helmet",
+        "image": "397_3",
+        "enchantments": ["Protection V", "Depth Rider II", "Respiration X"]
+      },
+      {
+        "name": "",
+        "type": "chestplate",
+        "image": "303_0",
+        "enchantments": ["Protection II"]
+      },
+      {
+        "name": "",
+        "type": "leggings",
+        "image": "300_0_Shark"
+      },
+      {
+        "name": "",
+        "type": "boots",
+        "image": "301_0_Shark"
+      },
+      {
+        "name": "",
+        "image": "373_1",
+        "potion": "Saturation I (20:00)"
+      },
+      {
+        "name": "",
+        "image": "373_16398",
+        "potion": ["Hunger XX (0:08)", "Slowness I (0:08)"],
+        "amount": "4"
+      }
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "370_0",
+        "enchantments": ["Sharpness V"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_resistance.png",
+      "kill_effect_regen.png",
+      "kill_effect_speed.png"
+    ]
+  }
+}

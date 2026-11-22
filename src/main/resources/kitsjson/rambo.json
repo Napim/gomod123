@@ -1,0 +1,70 @@
+{
+  "emojis": {
+    "1": "<:Rambo:1276693809815752797>",
+    "2": "<:IIx:1287430897892589578>",
+    "3": "<:IIIx:1287430909422735454>",
+    "4": "<:IVx:1287430917996155041>",
+    "5": "<:Vx:1287430927190065334>",
+    "6": "<:VIx:1287430934056009768>",
+    "7": "<:VIIx:1287430940989063301>",
+    "8": "<:VIIIx:1287430948232630333>",
+    "9": "<:IXx:1287430957443317821>",
+    "10": "<:Xx:1287430965500706846>",
+    "11": "<:starx:1287430981225156658>",
+    "12": "<:2star:1287425114186579968>"
+  },
+  "kit_info": {
+  "Kill effects": [
+    "Keeping in mind that you would get killed in 2-3 hits with Rambo, `Speed` is best to minimize hits during a fight and `Flame` would be highly effective in long-distance bow fighting."    
+  ]
+  },
+  "1": {
+    "description": [
+      "Unlocked by default"
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "280_0"
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_speed.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "11": {
+    "description": [
+      "Cost: 2,000,000"
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "280_0"
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_speed.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  },
+  "12": {
+    "description": [
+      "Cost: 500,000 | Requires 500 wins & 5,000 kills"
+    ],
+    "attackslot": [
+      {
+        "name": "",
+        "image": "280_0",
+        "enchantments": ["Knockback II"]
+      }
+    ],
+    "recommended_kill_effects": [
+      "kill_effect_speed.png",
+      "kill_effect_flame.png",
+      "kill_effect_resistance.png"
+    ]
+  }
+}
