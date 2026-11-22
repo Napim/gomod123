@@ -1,0 +1,30 @@
+name: Feature Request
+description: Suggest a new feature or improvement for gomod123
+labels: [ "enhancement" ]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: What would you like to see added or improved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: usecase
+    attributes:
+      label: Why would this be useful?
+      description: Explain how this helps in Blitz SG or general 1.8.9 gameplay.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target Client
+      options:
+        - Both Forge 1.8.9 & Lunar Weave
+        - Forge 1.8.9 only
+        - Lunar Client (Weave) only
+    validations:
+      required: false
