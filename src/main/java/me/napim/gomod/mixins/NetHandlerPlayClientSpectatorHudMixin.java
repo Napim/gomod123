@@ -13,6 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class NetHandlerPlayClientSpectatorHudMixin {
     @Inject(method = {"handleChat", "func_147251_a"}, at = @At("HEAD"), require = 0)
     private void gomod$rewriteSpectatorTargetBeforeLunar(S02PacketChat packet, CallbackInfo ci) {
+        try {
+            me.napim.gomod.features.BlitzPregamePlayerToggle.onIncomingChatPacket(packet);
+        } catch (Throwable ignored) {
+        }
         ReplayPlayerSelectorDisplay.rewriteIncomingSpectatorHudPacket(packet);
     }
 }

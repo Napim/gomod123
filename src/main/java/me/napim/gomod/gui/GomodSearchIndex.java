@@ -424,9 +424,24 @@ public final class GomodSearchIndex {
         }
         addSub("Mob Health Display", "Miscellaneous", "mob health",
                 g -> new MiscellaneousGUI(g), 44, MiscellaneousGUI.class);
-        addSub("Pregame visibility item", "Miscellaneous",
-                "blitz pregame preview item player visibility hide show players dye lobby",
+        addSub("Pre-game tools", "Miscellaneous",
+                "blitz pregame tools items player visibility hide show dye skull qstatus queue status paper requeue status changer disc online away busy offline hotbar lobby",
                 g -> new MiscellaneousGUI(g), 41, MiscellaneousGUI.class);
+        add("Pre-game tools", "Miscellaneous",
+                "blitz pregame tools items player visibility skull queue status paper requeue status changer disc online away busy offline",
+                g -> new PregameItemsSettingsGUI(misc(g)), -1, null);
+        addSub("Player visibility button", "Pre-game tools",
+                "blitz pregame player visibility hide show dye button",
+                g -> new PregameItemsSettingsGUI(misc(g)), 1, PregameItemsSettingsGUI.class);
+        addSub("Queue status button", "Pre-game tools",
+                "qstatus queue status skull slot 6 solo teams lobby players action bar button",
+                g -> new PregameItemsSettingsGUI(misc(g)), 2, PregameItemsSettingsGUI.class);
+        addSub("Requeue button", "Pre-game tools",
+                "requeue paper slot 4 solo teams blitz button",
+                g -> new PregameItemsSettingsGUI(misc(g)), 3, PregameItemsSettingsGUI.class);
+        addSub("Status changer button", "Pre-game tools",
+                "status changer disc online away busy appear offline hypixel /status slot 5 button",
+                g -> new PregameItemsSettingsGUI(misc(g)), 4, PregameItemsSettingsGUI.class);
         addSub("Deathmatch timer", "Miscellaneous",
                 "deathmatch timer boss bar ender dragon game end countdown 30s blitz",
                 g -> new MiscellaneousGUI(g), 45, MiscellaneousGUI.class);

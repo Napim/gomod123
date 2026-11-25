@@ -46,6 +46,7 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private static final int ID_CANCEL = 0;
     private static final int ID_SORT = 3;
     private static final int ID_ACTIVITY = 4;
+    private static final int ID_ACTIVITY_ORDER = 5;
     private static final int PANEL_BG = 0xF012181F;
     private static final int PANEL_BORDER = 0xFF2B3640;
     private static final int CARD_BG = 0xFF1B242D;
@@ -88,12 +89,26 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private GoStatsBlitzClient.Snapshot snapshot;
     private java.util.List<GoStatsBlitzClient.Kit> displayedKits = java.util.Collections.emptyList();
     private boolean recentKits;
+    private boolean activitySortByRecency = true;
+    private int timelineWindowDays = 30;
+    private String selectedTimelineKit;
+    private ActivityTimelineLayout.Result lastTimelineLayout;
+    private int lastTimelineLaneBaseY;
+    private int lastTimeline7dLeft;
+    private int lastTimeline7dRight;
+    private int lastTimeline30dLeft;
+    private int lastTimeline30dRight;
+    private int lastTimelineRangeTop;
+    private int lastTimelineRangeBottom;
+    private static final int TIMELINE_CARD_HEIGHT = 76;
+    private static final int TIMELINE_LANE_PITCH = 16;
     private boolean activityRequested;
     private boolean activityLoading;
     private long activityLoadedAt;
     private String activityError;
     private GuiButton kitSortButton;
     private GuiButton kitActivityButton;
+    private GuiButton activityOrderButton;
     private String profileDisplayName;
     private String profileRankTag;
     private String profileUsernameColor;
@@ -123,6 +138,10 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private int statsScrollbarGrabOffset;
     private boolean draggingStatsContent;
     private int lastStatsContentMouseY;
+    private java.util.List<String> pendingLifetimeTooltip;
+    private final java.util.List<SocialLinkTarget> visibleSocialLinks = new java.util.ArrayList<SocialLinkTarget>();
+    private String copiedSocialValue;
+    private long copiedSocialAt;
     private boolean draggingPreview;
     private int lastDragMouseX;
     private int lastDragMouseY;
@@ -186,6 +205,10 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         kitActivityButton = new ProfileActionButton(ID_ACTIVITY, 0, 0, 68, "Activity", GREEN);
         kitActivityButton.visible = false;
         buttonList.add(kitActivityButton);
+        activityOrderButton = new ProfileActionButton(ID_ACTIVITY_ORDER, 0, 0, 78, 16,
+                activitySortByRecency ? "Order: Recent" : "Order: Gained", MUTED);
+        activityOrderButton.visible = false;
+        buttonList.add(activityOrderButton);
         int buttonY = GuiHeader.backButtonY(height, 20);
         int buttonWidth = 100;
         if (recentOpponentProfile || readOnlyProfile) {
@@ -262,9 +285,7 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
                 final UUID finalUuid = resolvedUuid;
                 Minecraft.getMinecraft().addScheduledTask(() -> {
                     playerUuid = finalUuid;
-                    snapshot = result;
-                    updateDisplayedKits();
-                    loading = false;
+                    applySnapshot(result, false);
                 });
             } catch (Throwable error) {
                 String message = error.getMessage();
@@ -282,6 +303,41 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         worker.start();
     }
 
+    /** Called on the client thread when LeaderboardGUI finishes a fresh Hypixel refresh for this player. */
+    void applyRefreshedSnapshot(GoStatsBlitzClient.Snapshot refreshed) {
+        applySnapshot(refreshed, true);
+    }
+
+    private void applySnapshot(GoStatsBlitzClient.Snapshot incoming, boolean explicitRefresh) {
+        if (incoming == null) return;
+        if (snapshot != null) {
+            long currentAt = parseSnapshotMillis(snapshot.fetchedAt);
+            long incomingAt = parseSnapshotMillis(incoming.fetchedAt);
+            if (!explicitRefresh && currentAt > 0L && incomingAt > 0L && incomingAt < currentAt) {
+                snapshot = GoStatsBlitzClient.mergeRichFields(snapshot, incoming);
+                updateDisplayedKits();
+                loading = false;
+                loadError = null;
+                return;
+            }
+            incoming = GoStatsBlitzClient.mergeRichFields(incoming, snapshot);
+        }
+        snapshot = incoming;
+        updateDisplayedKits();
+        loading = false;
+        loadError = null;
+    }
+
+    private static long parseSnapshotMillis(String iso) {
+        if (iso == null || iso.trim().isEmpty()) return 0L;
+        try {
+            return java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli();
+        } catch (Exception ignored) {
+            try { return java.time.Instant.parse(iso).toEpochMilli(); }
+            catch (Exception ignoredAgain) { return 0L; }
+        }
+    }
+
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
@@ -290,10 +346,13 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         updateScrollForDraw(mouseY);
 
         drawPreviewPanel(mouseX, mouseY, partialTicks);
-        drawStatsPanel();
+        drawStatsPanel(mouseX, mouseY);
         positionKitSortButton();
         super.drawScreen(mouseX, mouseY, partialTicks);
         drawKitActivityTooltip(mouseX, mouseY);
+        if (!recentKits && pendingLifetimeTooltip != null && !pendingLifetimeTooltip.isEmpty()) {
+            drawHoveringText(pendingLifetimeTooltip, mouseX, mouseY);
+        }
     }
 
     private void positionKitSortButton() {
@@ -308,14 +367,25 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         kitActivityButton.yPosition = y;
         kitActivityButton.visible = kitSortButton.visible;
         kitActivityButton.enabled = !activityLoading;
+        if (activityOrderButton != null) {
+            int orderY = layout.contentTop - visibleScrollOffset() + profileKitsHeadingY() + 18;
+            activityOrderButton.xPosition = layout.contentRight - activityOrderButton.width;
+            activityOrderButton.yPosition = orderY;
+            activityOrderButton.displayString = activitySortByRecency ? "Order: Recent" : "Order: Gained";
+            activityOrderButton.visible = recentKits && snapshot != null && !loading
+                    && orderY >= layout.contentTop && orderY + activityOrderButton.height <= layout.contentBottom
+                    && layout.contentRight - layout.contentLeft >= 190 && displayedKits.size() > 1;
+            activityOrderButton.enabled = !activityLoading;
+        }
     }
 
     private void updateDisplayedKits() {
         displayedKits = snapshot == null ? new java.util.ArrayList<GoStatsBlitzClient.Kit>()
-                : GoStatsBlitzClient.sortedKits(snapshot.kits, recentKits);
+                : GoStatsBlitzClient.sortedKits(snapshot.kits, recentKits, activitySortByRecency);
         if (recentKits) displayedKits.removeIf(kit -> kit.lastActivityAt <= 0L);
     }
 
+    private boolean hasActivityTimeline() { return recentKits && !displayedKits.isEmpty(); }
     private int profileKitsHeadingY() { return recentKits ? activityKitsHeadingY() : layout.kitsHeadingY; }
     private int activityCoreHeadingY() { return 32; }
     private int activityCoreY() { return activityCoreHeadingY() + 12; }
@@ -323,31 +393,89 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private int activityModeRowsY() { return activityModeHeadingY() + 12; }
     private int activityExtrasHeadingY() { return activityModeRowsY() + 2 * PlayerProfileLayout.DETAIL_PITCH + 5; }
     private int activityExtrasRowsY() { return activityExtrasHeadingY() + 12; }
-    private int activityKitsHeadingY() { return activityExtrasRowsY() + 2 * PlayerProfileLayout.DETAIL_PITCH + 5; }
-    private int kitRowsY() { return recentKits ? activityKitsHeadingY() + 32 : layout.kitsY; }
-    private int kitRowHeight() { return recentKits ? 82 : layout.kitHeight; }
-    private int kitRowPitch() { return recentKits ? 88 : layout.kitPitch; }
+    private int activityTimelineHeadingY() { return activityExtrasRowsY() + 2 * PlayerProfileLayout.DETAIL_PITCH + 5; }
+    private int activityTimelineCardY() { return activityTimelineHeadingY() + 12; }
+    private int activityKitsHeadingY() {
+        return hasActivityTimeline()
+                ? activityTimelineCardY() + TIMELINE_CARD_HEIGHT + 10
+                : activityExtrasRowsY() + 2 * PlayerProfileLayout.DETAIL_PITCH + 5;
+    }
+    private int kitRowsY() { return recentKits ? activityKitsHeadingY() + 38 : layout.kitsY; }
+    private int kitRowHeight() { return recentKits ? 62 : layout.kitHeight; }
+    private int kitRowPitch() { return recentKits ? 68 : layout.kitPitch; }
     private int kitFooterY() { return kitRowsY() + Math.max(36, displayedKits.size() * kitRowPitch()) + 10; }
     private int profileFooterY() { return kitFooterY(); }
 
     private int profileContentBottomY() {
         int kitCount = displayedKits.size();
+        int kitsBottom;
         if (kitCount <= 0) {
             // The empty-state text is the only content below the Kits heading.
-            return kitRowsY() + (recentKits ? 34 : 20);
+            kitsBottom = kitRowsY() + (recentKits ? 34 : 20);
+        } else {
+            int lastKitRowBottom = kitRowsY() + (kitCount - 1) * kitRowPitch() + kitRowHeight();
+            if (recentKits) {
+                // Activity has a footer below its cards; Lifetime has extras below kits.
+                return Math.max(lastKitRowBottom, profileFooterY() + 9);
+            }
+            kitsBottom = lastKitRowBottom;
         }
-        int lastKitRowBottom = kitRowsY() + (kitCount - 1) * kitRowPitch() + kitRowHeight();
-        if (recentKits) {
-            // Activity has a footer below its cards; Lifetime has no footer.
-            return Math.max(lastKitRowBottom, profileFooterY() + 9);
-        }
-        return lastKitRowBottom;
+        if (recentKits) return kitsBottom;
+        return kitsBottom + lifetimeExtrasHeight();
     }
 
     private void drawKitActivityTooltip(int mouseX, int mouseY) {
         if (!recentKits || snapshot == null || mouseX < layout.contentLeft
                 || mouseX > layout.contentRight || mouseY < layout.contentTop || mouseY > layout.contentBottom) return;
-        int top = layout.contentTop - visibleScrollOffset() + kitRowsY();
+        int originY = layout.contentTop - visibleScrollOffset();
+        if (hasActivityTimeline() && lastTimelineLayout != null) {
+            ActivityTimelineLayout.Entry hit = ActivityTimelineLayout.hitTest(
+                    lastTimelineLayout, mouseX, mouseY, lastTimelineLaneBaseY, TIMELINE_LANE_PITCH);
+            if (hit != null) {
+                GoStatsBlitzClient.Kit kit = hit.kit;
+                java.util.List<String> text = new java.util.ArrayList<String>();
+                text.add(kitLevelChatColor(kit) + kitTitle(kit));
+                java.util.List<String> gains = new java.util.ArrayList<String>();
+                if (kit.activity.games >= 0) gains.add(activityGain(kit.activity.games, "games", EnumChatFormatting.AQUA));
+                if (kit.activity.kills >= 0) gains.add(activityGain(kit.activity.kills, "kills", EnumChatFormatting.GREEN));
+                if (kit.activity.wins >= 0) gains.add(activityGain(kit.activity.wins, "wins", EnumChatFormatting.YELLOW));
+                if (!gains.isEmpty()) {
+                    text.add(String.join(EnumChatFormatting.DARK_GRAY + " · ", gains));
+                } else if (kit.activity.timePlayedSeconds >= 0) {
+                    text.add("Playtime gained: " + formatDuration(kit.activity.timePlayedSeconds));
+                }
+                text.add(EnumChatFormatting.GRAY + "Older saved check: " + EnumChatFormatting.WHITE
+                        + activityTime(kit.activityAfter));
+                text.add(EnumChatFormatting.GRAY + "Latest saved check: " + EnumChatFormatting.WHITE
+                        + activityTime(kit.activityBefore));
+                String span = activityCompactSpan(kit.activityAfter, kit.activityBefore);
+                if (!span.isEmpty()) {
+                    text.add(EnumChatFormatting.GRAY + "Happened within: " + EnumChatFormatting.WHITE + span);
+                }
+                text.add(EnumChatFormatting.DARK_GRAY + "Click icon to jump to kit details");
+                drawHoveringText(text, mouseX, mouseY);
+                return;
+            }
+        }
+        if (mouseY >= originY && mouseY <= originY + 24 && snapshot.overallActivity != null
+                && snapshot.overallActivity.isAvailable()) {
+            GoStatsBlitzClient.ActivitySummary overall = snapshot.overallActivity;
+            java.util.List<String> text = new java.util.ArrayList<String>();
+            text.add("Overall scan window");
+            text.add(EnumChatFormatting.GRAY + "Older saved check: " + EnumChatFormatting.WHITE
+                    + activityTime(overall.before));
+            text.add(EnumChatFormatting.GRAY + "Latest saved check: " + EnumChatFormatting.WHITE
+                    + activityTime(overall.after));
+            String span = activityCompactSpan(overall.before, overall.after);
+            if (!span.isEmpty()) text.add(EnumChatFormatting.GRAY + "Window span: "
+                    + EnumChatFormatting.WHITE + span);
+            String age = formatRelativeAge(parseActivityInstant(overall.after));
+            if (!age.isEmpty()) text.add(EnumChatFormatting.GRAY + "Last checked: "
+                    + EnumChatFormatting.WHITE + age);
+            drawHoveringText(text, mouseX, mouseY);
+            return;
+        }
+        int top = originY + kitRowsY();
         int index = (mouseY - top) / kitRowPitch();
         if (mouseY < top || index < 0 || index >= displayedKits.size()
                 || mouseY >= top + index * kitRowPitch() + kitRowHeight()) return;
@@ -359,9 +487,12 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
                     + activityTime(kit.activityAfter));
             text.add(EnumChatFormatting.GRAY + "Latest saved check: " + EnumChatFormatting.WHITE
                     + activityTime(kit.activityBefore));
-            String span = activitySpan(kit.activityAfter, kit.activityBefore);
+            String span = activityCompactSpan(kit.activityAfter, kit.activityBefore);
             if (!span.isEmpty()) text.add(EnumChatFormatting.GRAY + "Time between checks: "
                     + EnumChatFormatting.WHITE + span);
+            String age = formatRelativeAge(kitLatestInstant(kit));
+            if (!age.isEmpty()) text.add(EnumChatFormatting.GRAY + "Last active: "
+                    + EnumChatFormatting.WHITE + age);
             if (kit.activity.timePlayedSeconds >= 0)
                 text.add("Playtime gained: " + formatDuration(kit.activity.timePlayedSeconds));
             text.add(EnumChatFormatting.DARK_GRAY + "Lifetime: " + number(kit.kills) + " kills, "
@@ -370,6 +501,92 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             text.add(EnumChatFormatting.GRAY + "Shared history is unavailable right now");
         }
         drawHoveringText(text, mouseX, mouseY);
+    }
+
+    private java.time.Instant kitLatestInstant(GoStatsBlitzClient.Kit kit) {
+        if (kit == null) return null;
+        java.time.Instant parsed = parseActivityInstant(kit.activityBefore);
+        if (parsed != null) return parsed;
+        return kit.lastActivityAt > 0L ? java.time.Instant.ofEpochMilli(kit.lastActivityAt) : null;
+    }
+
+    private String activityCompactSpan(String olderCheck, String latestCheck) {
+        java.time.Instant older = parseActivityInstant(olderCheck);
+        java.time.Instant latest = parseActivityInstant(latestCheck);
+        if (older == null || latest == null || latest.isBefore(older)) return "";
+        return formatCompactDuration(java.time.Duration.between(older, latest).getSeconds());
+    }
+
+    static String formatCompactDuration(long seconds) {
+        long clamped = Math.max(0L, seconds);
+        if (clamped < 60L) return "<1m";
+        long totalMinutes = clamped / 60L;
+        if (totalMinutes < 60L) return totalMinutes + "m";
+        long totalHours = totalMinutes / 60L;
+        long remMinutes = totalMinutes % 60L;
+        if (totalHours < 24L) {
+            return remMinutes == 0L ? totalHours + "h" : totalHours + "h " + remMinutes + "m";
+        }
+        long totalDays = totalHours / 24L;
+        long remHours = totalHours % 24L;
+        if (totalDays < 7L) {
+            return remHours == 0L ? totalDays + "d" : totalDays + "d " + remHours + "h";
+        }
+        if (totalDays < 30L) {
+            return totalDays + "d";
+        }
+        long months = totalDays / 30L;
+        long remDays = totalDays % 30L;
+        return remDays == 0L ? months + "mo" : months + "mo " + remDays + "d";
+    }
+
+    static String formatRelativeAge(java.time.Instant instant, java.time.Instant now) {
+        if (instant == null || now == null) return "";
+        long seconds = java.time.Duration.between(instant, now).getSeconds();
+        if (seconds < 60L) return "just now";
+        long minutes = seconds / 60L;
+        if (minutes < 60L) return minutes + "m ago";
+        long hours = minutes / 60L;
+        if (hours < 24L) return hours + "h ago";
+        long days = hours / 24L;
+        if (days < 14L) return days + "d ago";
+        if (days < 60L) return (days / 7L) + "w ago";
+        return (days / 30L) + "mo ago";
+    }
+
+    private String formatRelativeAge(java.time.Instant instant) {
+        return formatRelativeAge(instant, java.time.Instant.now());
+    }
+
+    private int activityRecencyColor(java.time.Instant latest) {
+        if (latest == null) return MUTED;
+        long hours = Math.max(0L, java.time.Duration.between(latest, java.time.Instant.now()).toHours());
+        if (hours < 24L) return GREEN;
+        if (hours < 24L * 7L) return GOLD;
+        return MUTED;
+    }
+
+    private String activityRecencyLabel(java.time.Instant latest) {
+        if (latest == null) return "OVERALL CHECKS";
+        long hours = Math.max(0L, java.time.Duration.between(latest, java.time.Instant.now()).toHours());
+        if (hours < 24L) return "ACTIVE TODAY";
+        if (hours < 24L * 7L) return "THIS WEEK";
+        return "OLDER SCAN";
+    }
+
+    private String activityShortDateRange(String olderIso, String latestIso) {
+        java.time.Instant older = parseActivityInstant(olderIso);
+        java.time.Instant latest = parseActivityInstant(latestIso);
+        if (older == null || latest == null) return "";
+        java.time.ZoneId zone = java.time.ZoneId.systemDefault();
+        java.time.ZonedDateTime start = older.atZone(zone);
+        java.time.ZonedDateTime end = latest.atZone(zone);
+        java.time.format.DateTimeFormatter dayFmt = java.time.format.DateTimeFormatter.ofPattern("MMM d", Locale.ROOT);
+        java.time.format.DateTimeFormatter timeFmt = java.time.format.DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT);
+        if (start.toLocalDate().equals(end.toLocalDate())) {
+            return start.format(dayFmt) + " " + start.format(timeFmt) + " → " + end.format(timeFmt);
+        }
+        return start.format(dayFmt) + " → " + end.format(dayFmt);
     }
 
     private String activityTime(String iso) {
@@ -389,13 +606,6 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             try { return java.time.Instant.parse(iso); }
             catch (Exception ignoredAgain) { return null; }
         }
-    }
-
-    private String activitySpan(String olderCheck, String latestCheck) {
-        java.time.Instant older = parseActivityInstant(olderCheck);
-        java.time.Instant latest = parseActivityInstant(latestCheck);
-        if (older == null || latest == null || latest.isBefore(older)) return "";
-        return formatDuration(java.time.Duration.between(older, latest).getSeconds());
     }
 
     private void requestKitActivity() {
@@ -708,36 +918,45 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         }
     }
 
-    private void drawStatsPanel() {
+    private void drawStatsPanel(int mouseX, int mouseY) {
         drawPanel(statsPanelLeft, statsPanelTop, statsPanelRight, statsPanelBottom);
         drawFitted(recentKits ? "Activity overview" : "Lifetime overview",
                 statsPanelLeft + 11, statsPanelTop + 12,
                 statsPanelRight - statsPanelLeft - 24, 1.0F, TEXT, 0);
-        if (statsPanelRight - statsPanelLeft >= 290) {
-            String badge = recentKits ? "official + gomod"
-                    : snapshot == null ? "LIFETIME" : snapshot.cacheLabel();
+        if (!recentKits && statsPanelRight - statsPanelLeft >= 290) {
+            String badge = snapshot == null ? "LIFETIME" : snapshot.cacheLabel();
             drawFitted(badge, statsPanelRight - 12, statsPanelTop + 13,
                     125, 1.0F, MUTED, 2);
         }
         Gui.drawRect(statsPanelLeft + 10, layout.contentTop - 8,
                 statsPanelRight - 10, layout.contentTop - 7, 0xFF26323C);
+        if (loading) {
+            drawLoadingDividerHighlight(statsPanelLeft + 10, statsPanelRight - 10,
+                    layout.contentTop - 8, System.currentTimeMillis());
+        }
 
         if (loading || snapshot == null) {
             scrollOffset = maxScroll = 0;
             renderedScrollOffset = 0.0F;
             draggingStatsScrollbar = false;
             statsScrollbarThumbTop = statsScrollbarThumbBottom = 0;
+            lastTimelineLayout = null;
             drawStatsState();
             return;
         }
         updateStatsScrollBounds();
+        pendingLifetimeTooltip = null;
+        visibleSocialLinks.clear();
         SocialDraw.enableScissor(layout.contentLeft, layout.contentTop,
                 layout.contentRight, layout.contentBottom);
         try {
             int originY = layout.contentTop - visibleScrollOffset();
             int contentWidth = layout.contentRight - layout.contentLeft;
-            if (recentKits) drawActivityStats(originY, contentWidth);
-            else drawLifetimeStats(originY, contentWidth);
+            if (recentKits) drawActivityStats(originY, contentWidth, mouseX, mouseY);
+            else {
+                lastTimelineLayout = null;
+                drawLifetimeStats(originY, contentWidth, mouseX, mouseY);
+            }
         } finally {
             SocialDraw.disableScissor();
         }
@@ -745,7 +964,7 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         drawStatsScrollbar(layout.contentTop, layout.contentBottom);
     }
 
-    private void drawLifetimeStats(int originY, int contentWidth) {
+    private void drawLifetimeStats(int originY, int contentWidth, int mouseX, int mouseY) {
         String[] labels = {"Kills", "Wins", "K/D", "W/L"};
         String[] values = {number(snapshot.kills), number(snapshot.wins),
                 decimal(snapshot.kd), decimal(snapshot.wlr)};
@@ -780,9 +999,341 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             drawFitted("No kit statistics yet", layout.contentLeft + 8, originY + kitRowsY() + 10,
                     contentWidth - 16, 1.0F, MUTED, 0);
         }
+
+        int kitsBottom = maxKits <= 0
+                ? kitRowsY() + 20
+                : kitRowsY() + (maxKits - 1) * kitRowPitch() + kitRowHeight();
+        drawLifetimeExtras(originY, kitsBottom, contentWidth, mouseX, mouseY);
     }
 
-    private void drawActivityStats(int originY, int contentWidth) {
+    private java.util.List<GoStatsBlitzClient.TournamentStats> displayedTournaments() {
+        return GoStatsBlitzClient.TournamentStats.withKnownPlaceholders(
+                snapshot == null ? null : snapshot.tournaments);
+    }
+
+    private int lifetimeExtrasHeight() {
+        if (snapshot == null || layout == null) return 0;
+        int y = 0;
+        int cols = Math.max(1, layout.detailColumns);
+
+        java.util.List<GoStatsBlitzClient.TournamentStats> tournaments = displayedTournaments();
+        if (!tournaments.isEmpty()) {
+            y += 14 + 12;
+            for (GoStatsBlitzClient.TournamentStats tourney : tournaments) {
+                y += tourney.played() ? 46 : 28;
+            }
+        }
+        if (snapshot.blitzSettings != null && snapshot.blitzSettings.isAvailable()) {
+            int settingCount = countBlitzSettingRows(snapshot.blitzSettings);
+            int rows = (settingCount + cols - 1) / cols;
+            y += 14 + 12 + rows * PlayerProfileLayout.DETAIL_PITCH;
+            if (!snapshot.blitzSettings.privateGames.isEmpty()) {
+                y += PlayerProfileLayout.DETAIL_PITCH;
+            }
+        }
+        if (snapshot.playerInfo != null) {
+            int infoCount = countPlayerInfoRows(snapshot.playerInfo);
+            int socialCount = snapshot.playerInfo.socialLinks.size();
+            if (infoCount > 0 || socialCount > 0) {
+                int rows = (infoCount + cols - 1) / cols;
+                int socialRows = (socialCount + cols - 1) / cols;
+                y += 14 + 12 + (rows + socialRows) * PlayerProfileLayout.DETAIL_PITCH;
+            }
+        }
+        return y;
+    }
+
+    private void drawLifetimeExtras(int originY, int startY, int contentWidth, int mouseX, int mouseY) {
+        if (snapshot == null || layout == null) return;
+        int y = startY;
+        int x = layout.contentLeft;
+        int cols = Math.max(1, layout.detailColumns);
+        boolean inViewport = mouseX >= layout.contentLeft && mouseX <= layout.contentRight
+                && mouseY >= layout.contentTop && mouseY <= layout.contentBottom;
+
+        java.util.List<GoStatsBlitzClient.TournamentStats> tournaments = displayedTournaments();
+        if (!tournaments.isEmpty()) {
+            y += 14;
+            drawActivitySectionHeading("BLITZ TOURNAMENTS", originY + y);
+            y += 12;
+            for (GoStatsBlitzClient.TournamentStats tourney : tournaments) {
+                int cardY = originY + y;
+                if (!tourney.played()) {
+                    drawUnplayedTournamentRow(x, cardY, contentWidth, tourney);
+                    y += 28;
+                    continue;
+                }
+                drawTournamentCard(x, cardY, contentWidth, tourney);
+                if (inViewport && mouseX >= x && mouseX <= x + contentWidth
+                        && mouseY >= cardY && mouseY <= cardY + 42) {
+                    java.util.List<String> tip = new java.util.ArrayList<String>();
+                    tip.add(EnumChatFormatting.GOLD + tourney.name);
+                    if (!tourney.date().isEmpty()) {
+                        tip.add(EnumChatFormatting.DARK_GRAY + tourney.date());
+                    }
+                    tip.add(EnumChatFormatting.GRAY + "Kills: " + EnumChatFormatting.GREEN + number(tourney.kills)
+                            + EnumChatFormatting.GRAY + "  ·  Deaths: " + EnumChatFormatting.RED + number(tourney.deaths));
+                    tip.add(EnumChatFormatting.GRAY + "Wins: " + EnumChatFormatting.YELLOW + number(tourney.wins)
+                            + EnumChatFormatting.GRAY + "  ·  Games: " + EnumChatFormatting.WHITE + number(tourney.games));
+                    tip.add(EnumChatFormatting.GRAY + "K/D: " + EnumChatFormatting.GOLD + decimal(tourney.kd())
+                            + EnumChatFormatting.GRAY + "  ·  W/L: " + EnumChatFormatting.GOLD + decimal(tourney.wlr()));
+                    if (tourney.blitzUses > 0L) {
+                        tip.add(EnumChatFormatting.GRAY + "Blitz Stars Used: " + EnumChatFormatting.AQUA + number(tourney.blitzUses));
+                    }
+                    if (tourney.timePlayedSeconds > 0L) {
+                        tip.add(EnumChatFormatting.GRAY + "Playtime: " + EnumChatFormatting.WHITE + formatDuration(tourney.timePlayedSeconds));
+                    }
+                    if (!tourney.topKit.isEmpty()) {
+                        tip.add(EnumChatFormatting.GRAY + "Top Kit: " + EnumChatFormatting.WHITE + tourney.topKit);
+                    }
+                    pendingLifetimeTooltip = tip;
+                }
+                y += 46;
+            }
+        }
+
+        if (snapshot.blitzSettings != null && snapshot.blitzSettings.isAvailable()) {
+            GoStatsBlitzClient.BlitzSettings settings = snapshot.blitzSettings;
+            y += 14;
+            drawActivitySectionHeading("BLITZ SETTINGS", originY + y);
+            y += 12;
+            java.util.List<String[]> rows = new java.util.ArrayList<String[]>();
+            java.util.List<Integer> rowColors = new java.util.ArrayList<Integer>();
+            if (settings.toggleKillCounter != null) {
+                boolean enabled = settings.toggleKillCounter.intValue() > 0;
+                rows.add(new String[]{"Kill Counter", enabled ? "On" : "Off"});
+                rowColors.add(enabled ? GREEN : RED);
+            }
+            if (settings.altKillMessages != null || settings.altKillMessagesUnlocked != null) {
+                if (Boolean.FALSE.equals(settings.altKillMessagesUnlocked) && settings.altKillMessages == null) {
+                    rows.add(new String[]{"Tournament Kill Counter", "Not unlocked"});
+                    rowColors.add(MUTED);
+                } else {
+                    boolean enabled = Boolean.TRUE.equals(settings.altKillMessages);
+                    rows.add(new String[]{"Tournament Kill Counter", enabled ? "On" : "Off"});
+                    rowColors.add(enabled ? GREEN : RED);
+                }
+            }
+            if (settings.autoArmor != null) {
+                rows.add(new String[]{"Auto-Armor", settings.autoArmor.booleanValue() ? "On" : "Off"});
+                rowColors.add(settings.autoArmor.booleanValue() ? GREEN : RED);
+            }
+            if (settings.disablePrestigeFinisher != null) {
+                boolean enabled = !settings.disablePrestigeFinisher.booleanValue();
+                rows.add(new String[]{"Prestige Finisher", enabled ? "Enabled" : "Disabled"});
+                rowColors.add(enabled ? GREEN : RED);
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                int rowX = layout.detailX(i);
+                int rowY = originY + y + (i / cols) * PlayerProfileLayout.DETAIL_PITCH;
+                drawDetailRow(rowX, rowY, layout.detailWidth, rows.get(i)[0], rows.get(i)[1], rowColors.get(i));
+            }
+            y += ((rows.size() + cols - 1) / cols) * PlayerProfileLayout.DETAIL_PITCH;
+            if (!settings.privateGames.isEmpty()) {
+                int pgY = originY + y;
+                String summary = formatPrivateGamesSummary(settings.privateGames);
+                drawWideDetailRow(x, pgY, contentWidth, "Private Games", summary, GOLD);
+                if (inViewport && mouseX >= x && mouseX <= x + contentWidth
+                        && mouseY >= pgY && mouseY <= pgY + 24) {
+                    java.util.List<String> tip = new java.util.ArrayList<String>();
+                    tip.add(EnumChatFormatting.GOLD + "Blitz Private Games Preset");
+                    for (java.util.Map.Entry<String, String> entry : settings.privateGames.entrySet()) {
+                        tip.add(EnumChatFormatting.GRAY + formatPrivateGameFullName(entry.getKey()) + ": "
+                                + EnumChatFormatting.WHITE + formatPrivateGameValue(entry.getValue()));
+                    }
+                    pendingLifetimeTooltip = tip;
+                }
+                y += PlayerProfileLayout.DETAIL_PITCH;
+            }
+        }
+
+        if (snapshot.playerInfo != null
+                && (countPlayerInfoRows(snapshot.playerInfo) > 0
+                || !snapshot.playerInfo.socialLinks.isEmpty())) {
+            GoStatsBlitzClient.PlayerInfo info = snapshot.playerInfo;
+            y += 14;
+            drawActivitySectionHeading("PLAYER INFO", originY + y);
+            y += 12;
+            java.util.List<String[]> rows = new java.util.ArrayList<String[]>();
+            java.util.List<Integer> rowColors = new java.util.ArrayList<Integer>();
+            if (!info.userLanguage.isEmpty()) {
+                rows.add(new String[]{"Hypixel Language", formatLanguage(info.userLanguage)});
+                rowColors.add(TEXT);
+            }
+            if (info.autoActivateQuests != null) {
+                rows.add(new String[]{"Auto-Accept Quests", info.autoActivateQuests.booleanValue() ? "On" : "Off"});
+                rowColors.add(info.autoActivateQuests.booleanValue() ? GREEN : RED);
+            }
+            if (info.lobbyPlayersVisible != null) {
+                rows.add(new String[]{"Lobby Players", info.lobbyPlayersVisible.booleanValue() ? "Visible" : "Hidden"});
+                rowColors.add(info.lobbyPlayersVisible.booleanValue() ? GREEN : RED);
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                int rowX = layout.detailX(i);
+                int rowY = originY + y + (i / cols) * PlayerProfileLayout.DETAIL_PITCH;
+                drawDetailRow(rowX, rowY, layout.detailWidth, rows.get(i)[0], rows.get(i)[1], rowColors.get(i));
+            }
+            y += ((rows.size() + cols - 1) / cols) * PlayerProfileLayout.DETAIL_PITCH;
+
+            int socialIndex = 0;
+            long now = System.currentTimeMillis();
+            for (java.util.Map.Entry<String, String> entry : info.socialLinks.entrySet()) {
+                int rowX = layout.detailX(socialIndex);
+                int rowY = originY + y + (socialIndex / cols) * PlayerProfileLayout.DETAIL_PITCH;
+                String platform = formatSocialPlatform(entry.getKey());
+                String rawVal = entry.getValue();
+                boolean recentlyCopied = rawVal != null && rawVal.equals(copiedSocialValue)
+                        && now - copiedSocialAt < 2000L;
+                String displayVal = recentlyCopied ? "Copied!" : formatSocialDisplayValue(rawVal);
+                drawDetailRow(rowX, rowY, layout.detailWidth, platform, displayVal,
+                        recentlyCopied ? GREEN : 0xFF7DD3FC);
+                if (rowVisible(rowY, 24)) {
+                    visibleSocialLinks.add(new SocialLinkTarget(rowX, rowY, layout.detailWidth, 24, rawVal));
+                }
+                if (inViewport && mouseX >= rowX && mouseX <= rowX + layout.detailWidth
+                        && mouseY >= rowY && mouseY <= rowY + 24) {
+                    java.util.List<String> tip = new java.util.ArrayList<String>();
+                    tip.add(EnumChatFormatting.AQUA + platform);
+                    tip.add(EnumChatFormatting.WHITE + rawVal);
+                    tip.add(recentlyCopied
+                            ? EnumChatFormatting.GREEN + "Copied to clipboard!"
+                            : EnumChatFormatting.GRAY + "Click to copy");
+                    pendingLifetimeTooltip = tip;
+                }
+                socialIndex++;
+            }
+        }
+    }
+
+    private void drawTournamentCard(int x, int y, int width, GoStatsBlitzClient.TournamentStats tourney) {
+        if (!rowVisible(y, 42)) return;
+        SocialDraw.roundedRect(x, y, x + width, y + 42, 4, CARD_BG);
+        SocialDraw.roundedRect(x + 6, y + 6, x + 8, y + 36, 1.0F, GOLD);
+        String date = tourney.date();
+        String header = date.isEmpty() ? tourney.name
+                : tourney.name + EnumChatFormatting.GRAY + " · " + date;
+        int headerMaxWidth = tourney.topKit.isEmpty() ? width - 22 : Math.max(80, (width * 62) / 100 - 14);
+        drawFitted(header, x + 14, y + 6, headerMaxWidth, 0.90F, GOLD, 0);
+        if (!tourney.topKit.isEmpty()) {
+            drawFitted("Top: " + tourney.topKit, x + width - 8, y + 6, Math.max(40, width - headerMaxWidth - 26), 0.80F, MUTED, 2);
+        }
+        String[] labels = {"Kills", "Wins", "Games", "K/D", "W/L"};
+        String[] values = {number(tourney.kills), number(tourney.wins), number(tourney.games),
+                decimal(tourney.kd()), decimal(tourney.wlr())};
+        int[] colors = {STAT_KILLS, STAT_WINS, STAT_GAMES, STAT_RATIO, STAT_RATIO};
+        int colWidth = (width - 20) / labels.length;
+        for (int i = 0; i < labels.length; i++) {
+            int cx = x + 14 + i * colWidth;
+            drawFitted(labels[i], cx, y + 21, colWidth - 4, 0.72F, MUTED, 0);
+            drawFitted(values[i], cx, y + 30, colWidth - 4, 0.88F, colors[i], 0);
+        }
+    }
+
+    private void drawUnplayedTournamentRow(int x, int y, int width, GoStatsBlitzClient.TournamentStats tourney) {
+        if (!rowVisible(y, 24)) return;
+        SocialDraw.roundedRect(x, y, x + width, y + 24, 4, 0x901B242D);
+        SocialDraw.roundedRect(x + 6, y + 5, x + 8, y + 19, 1.0F, PANEL_BORDER);
+        String date = tourney.date();
+        String header = date.isEmpty() ? tourney.name : tourney.name + " · " + date;
+        int statusWidth = Math.max(56, Math.min(width / 3, fontRendererObj.getStringWidth("Did not play") + 6));
+        drawFitted(header, x + 14, y + 8, Math.max(40, width - statusWidth - 24), 0.86F, MUTED, 0);
+        drawFitted("Did not play", x + width - 8, y + 8, statusWidth, 0.80F, MUTED, 2);
+    }
+
+    private static int countBlitzSettingRows(GoStatsBlitzClient.BlitzSettings settings) {
+        int count = 0;
+        if (settings.autoArmor != null) count++;
+        if (settings.toggleKillCounter != null) count++;
+        if (settings.altKillMessages != null || settings.altKillMessagesUnlocked != null) count++;
+        if (settings.disablePrestigeFinisher != null) count++;
+        return count;
+    }
+
+    private static int countPlayerInfoRows(GoStatsBlitzClient.PlayerInfo info) {
+        int count = 0;
+        if (!info.userLanguage.isEmpty()) count++;
+        if (info.autoActivateQuests != null) count++;
+        if (info.lobbyPlayersVisible != null) count++;
+        return count;
+    }
+
+    private static String formatPrivateGamesSummary(java.util.Map<String, String> pg) {
+        java.util.List<String> parts = new java.util.ArrayList<String>();
+        for (java.util.Map.Entry<String, String> entry : pg.entrySet()) {
+            String k = entry.getKey();
+            String v = entry.getValue() == null ? "" : entry.getValue().trim();
+            if (v.isEmpty()) continue;
+            if ("enable_max_kits_and_kill_effects".equals(k)) {
+                parts.add("true".equalsIgnoreCase(v) ? "Max Kits" : "Max Kits: Off");
+            } else if ("true".equalsIgnoreCase(v) || "false".equalsIgnoreCase(v)) {
+                parts.add(formatPrivateGameKey(k) + ": " + ("true".equalsIgnoreCase(v) ? "On" : "Off"));
+            } else {
+                parts.add(v);
+            }
+        }
+        return parts.isEmpty() ? "Default" : String.join(" · ", parts);
+    }
+
+    private static String formatPrivateGameKey(String key) {
+        if ("enable_max_kits_and_kill_effects".equals(key)) return "Max Kits";
+        if ("extra_blitz_stars".equals(key)) return "Extra Blitz Stars";
+        if ("health_buff".equals(key)) return "Health Buff";
+        if ("low_gravity".equals(key)) return "Low Gravity";
+        if ("enable_night_time".equals(key)) return "Night Time";
+        if ("one_hit_one_kill_blitz".equals(key)) return "One-Hit Kill";
+        if ("speed".equals(key)) return "Speed";
+        return titleCaseSlug(key);
+    }
+
+    private static String formatPrivateGameFullName(String key) {
+        if ("enable_max_kits_and_kill_effects".equals(key)) return "Max Kits & Kill Effects";
+        if ("one_hit_one_kill_blitz".equals(key)) return "One-Hit One-Kill";
+        return formatPrivateGameKey(key);
+    }
+
+    private static String formatPrivateGameValue(String value) {
+        if ("true".equalsIgnoreCase(value)) return "On";
+        if ("false".equalsIgnoreCase(value)) return "Off";
+        return value;
+    }
+
+    private static String formatLanguage(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "Unknown";
+        String trimmed = raw.trim();
+        if ("en".equalsIgnoreCase(trimmed)) return "English";
+        return titleCaseSlug(trimmed);
+    }
+
+    private static String formatSocialPlatform(String raw) {
+        if ("HYPIXEL".equalsIgnoreCase(raw)) return "Hypixel Forums";
+        if ("YOUTUBE".equalsIgnoreCase(raw)) return "YouTube";
+        if ("TIKTOK".equalsIgnoreCase(raw)) return "TikTok";
+        return titleCaseSlug(raw);
+    }
+
+    private static String formatSocialDisplayValue(String raw) {
+        if (raw == null) return "";
+        String cleaned = raw.trim();
+        if (cleaned.startsWith("https://")) cleaned = cleaned.substring("https://".length());
+        else if (cleaned.startsWith("http://")) cleaned = cleaned.substring("http://".length());
+        if (cleaned.startsWith("www.")) cleaned = cleaned.substring("www.".length());
+        while (cleaned.endsWith("/")) cleaned = cleaned.substring(0, cleaned.length() - 1);
+        return cleaned;
+    }
+
+    private static String titleCaseSlug(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "";
+        String[] parts = raw.trim().toLowerCase(Locale.ROOT).split("[_\\s]+");
+        StringBuilder out = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (out.length() > 0) out.append(' ');
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.toString();
+    }
+
+    private void drawActivityStats(int originY, int contentWidth, int mouseX, int mouseY) {
         GoStatsBlitzClient.ActivitySummary activity = snapshot.overallActivity;
         int x = layout.contentLeft;
         int right = layout.contentRight;
@@ -821,12 +1372,24 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
                     extraLabels[i], extraValues[i], extraColors[i]);
         }
 
+        if (hasActivityTimeline()) {
+            drawActivitySectionHeading("ACTIVITY TIMELINE", originY + activityTimelineHeadingY());
+            drawActivityTimeline(x, originY + activityTimelineCardY(), contentWidth, mouseX, mouseY);
+        } else {
+            lastTimelineLayout = null;
+        }
+
         int headingY = originY + profileKitsHeadingY();
         drawSectionHeading("KIT ACTIVITY", headingY, "");
         String hint = activityLoading ? "Loading saved activity..."
                 : activityError != null ? "Activity unavailable. Select Activity to retry."
-                : "Gains per latest scan · each kit shows its own older and latest saved check (local time)";
-        drawFitted(hint, x + 2, headingY + 18, contentWidth - 4, 0.78F, MUTED, 0);
+                : activitySortByRecency
+                ? "Most recently played first · hover a card for exact checks"
+                : "Highest gains first · hover a card for exact checks";
+        int hintWidth = (activityOrderButton != null && activityOrderButton.visible)
+                ? Math.max(40, contentWidth - activityOrderButton.width - 10)
+                : contentWidth - 4;
+        drawFitted(hint, x + 2, headingY + 21, hintWidth, 0.76F, MUTED, 0);
 
         int maxKits = displayedKits.size();
         for (int i = 0; i < maxKits; i++) {
@@ -850,16 +1413,150 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
 
     private void drawActivityWindow(int x, int y, int width,
                                    GoStatsBlitzClient.ActivitySummary activity) {
+        java.time.Instant latest = activity.isAvailable() ? parseActivityInstant(activity.after) : null;
+        int accent = activity.isAvailable() ? activityRecencyColor(latest) : MUTED;
         SocialDraw.roundedRect(x, y, x + width, y + 24, 4, 0xB01B242D);
-        SocialDraw.roundedRect(x + 7, y + 5, x + 10, y + 19, 1.5F, GREEN);
-        drawFitted("OVERALL CHECKS", x + 16, y + 8, 92, 0.76F, MUTED, 0);
-        String range = activity.isAvailable()
-                ? activityTime(activity.before) + " → " + activityTime(activity.after)
-                : activityLoading ? "Loading saved activity..."
-                : activityError != null ? "Activity unavailable"
-                : "No comparable overall scan yet";
+        SocialDraw.roundedRect(x + 7, y + 5, x + 10, y + 19, 1.5F, accent);
+        String leftLabel = activity.isAvailable() ? activityRecencyLabel(latest) : "OVERALL CHECKS";
+        drawFitted(leftLabel, x + 16, y + 8, 92, 0.76F, activity.isAvailable() ? accent : MUTED, 0);
+        String range;
+        if (activity.isAvailable()) {
+            String span = activityCompactSpan(activity.before, activity.after);
+            String age = formatRelativeAge(latest);
+            if (!span.isEmpty() && !age.isEmpty()) {
+                range = span + " window  ·  " + age;
+            } else {
+                range = activityTime(activity.before) + " → " + activityTime(activity.after);
+            }
+        } else if (activityLoading) {
+            range = "Loading saved activity...";
+        } else if (activityError != null) {
+            range = "Activity unavailable";
+        } else {
+            range = "No comparable overall scan yet";
+        }
         drawFitted(range, x + width - 8, y + 8, width - 118, 0.78F,
                 activity.isAvailable() ? TEXT : MUTED, 2);
+    }
+
+    private void drawActivityTimeline(int x, int y, int width, int mouseX, int mouseY) {
+        if (!rowVisible(y, TIMELINE_CARD_HEIGHT)) {
+            lastTimelineLayout = null;
+            return;
+        }
+        SocialDraw.roundedRect(x, y, x + width, y + TIMELINE_CARD_HEIGHT, 4, CARD_BG);
+
+        // Range pills (7d | 30d) in top-right of timeline card.
+        int pillH = 13;
+        int pillY = y + 5;
+        int pill30W = 28;
+        int pill7W = 22;
+        int pill30Left = x + width - 8 - pill30W;
+        int pill7Left = pill30Left - 4 - pill7W;
+        lastTimeline7dLeft = pill7Left;
+        lastTimeline7dRight = pill7Left + pill7W;
+        lastTimeline30dLeft = pill30Left;
+        lastTimeline30dRight = pill30Left + pill30W;
+        lastTimelineRangeTop = pillY;
+        lastTimelineRangeBottom = pillY + pillH;
+
+        boolean mouseInViewport = mouseX >= layout.contentLeft && mouseX <= layout.contentRight
+                && mouseY >= layout.contentTop && mouseY <= layout.contentBottom;
+        drawTimelineRangePill(pill7Left, pillY, pill7W, pillH, "7d", timelineWindowDays == 7,
+                mouseInViewport && mouseX >= pill7Left && mouseX <= pill7Left + pill7W
+                        && mouseY >= pillY && mouseY <= pillY + pillH);
+        drawTimelineRangePill(pill30Left, pillY, pill30W, pillH, "30d", timelineWindowDays == 30,
+                mouseInViewport && mouseX >= pill30Left && mouseX <= pill30Left + pill30W
+                        && mouseY >= pillY && mouseY <= pillY + pillH);
+
+        int trackLeft = x + 8;
+        int trackWidth = Math.max(40, width - 16);
+        int trackTop = y + 22;
+        int trackBottom = y + 58;
+        SocialDraw.roundedRect(trackLeft, trackTop, trackLeft + trackWidth, trackBottom, 3, 0xFF131B22);
+
+        // Vertical time gridlines (0%, 33%, 66%, 100%).
+        for (int i = 1; i <= 2; i++) {
+            int gx = trackLeft + Math.round(trackWidth * (i / 3.0F));
+            Gui.drawRect(gx, trackTop + 2, gx + 1, trackBottom - 2, 0xFF1F2A34);
+        }
+
+        ActivityTimelineLayout.Result timeline = ActivityTimelineLayout.build(
+                displayedKits, System.currentTimeMillis(), timelineWindowDays,
+                trackLeft + 3, trackWidth - 6);
+        lastTimelineLayout = timeline;
+        lastTimelineLaneBaseY = trackTop + 3;
+
+        // Top-left summary text.
+        String summary;
+        if (timeline.entries.isEmpty()) {
+            summary = timelineWindowDays == 7
+                    ? "No kits in last 7d · try 30d"
+                    : "No kits in last 30d (" + timeline.olderOutsideCount + " older)";
+        } else {
+            String kitWord = timeline.entries.size() == 1 ? " kit" : " kits";
+            summary = timeline.entries.size() + kitWord + " in last " + timelineWindowDays + "d"
+                    + (timeline.olderOutsideCount > 0 ? " · " + timeline.olderOutsideCount + " older" : "");
+        }
+        drawFitted(summary, x + 8, y + 8, Math.max(40, pill7Left - x - 14), 0.74F, MUTED, 0);
+
+        ActivityTimelineLayout.Entry hovered = mouseInViewport
+                ? ActivityTimelineLayout.hitTest(timeline, mouseX, mouseY, lastTimelineLaneBaseY, TIMELINE_LANE_PITCH)
+                : null;
+
+        // Pass 1: shaded interval brackets showing [older check -> latest check] for each kit.
+        for (ActivityTimelineLayout.Entry e : timeline.entries) {
+            int laneY = lastTimelineLaneBaseY + e.lane * TIMELINE_LANE_PITCH;
+            int accent = activityRecencyColor(java.time.Instant.ofEpochMilli(e.latestMs));
+            boolean active = e == hovered
+                    || (selectedTimelineKit != null && selectedTimelineKit.equalsIgnoreCase(e.kit.name));
+            int fillAlpha = active ? 0x68000000 : 0x30000000;
+            int fill = fillAlpha | (accent & 0x00FFFFFF);
+            int capAlpha = active ? 0xE0000000 : 0x80000000;
+            int cap = capAlpha | (accent & 0x00FFFFFF);
+
+            if (active) {
+                int guide = 0x38000000 | (accent & 0x00FFFFFF);
+                Gui.drawRect(e.spanLeft, trackTop + 1, e.spanLeft + 1, trackBottom - 1, guide);
+                Gui.drawRect(e.spanRight - 1, trackTop + 1, e.spanRight, trackBottom - 1, guide);
+            }
+            SocialDraw.roundedRect(e.spanLeft, laneY + 3, e.spanRight, laneY + 11, 2, fill);
+            Gui.drawRect(e.spanLeft, laneY + 2, e.spanLeft + 1, laneY + 12, cap);
+            Gui.drawRect(e.spanRight - 1, laneY + 2, e.spanRight, laneY + 12, cap);
+        }
+
+        // Pass 2: clickable kit icon chips centered on each kit's interval.
+        for (ActivityTimelineLayout.Entry e : timeline.entries) {
+            int laneY = lastTimelineLaneBaseY + e.lane * TIMELINE_LANE_PITCH;
+            int accent = activityRecencyColor(java.time.Instant.ofEpochMilli(e.latestMs));
+            boolean active = e == hovered
+                    || (selectedTimelineKit != null && selectedTimelineKit.equalsIgnoreCase(e.kit.name));
+            int chipBg = active ? 0xFF24352E : 0xFF1B242D;
+            int chipBorder = active ? accent : 0xFF334250;
+            SocialDraw.roundedBorder(e.chipX, laneY,
+                    e.chipX + ActivityTimelineLayout.CHIP_SIZE,
+                    laneY + ActivityTimelineLayout.CHIP_SIZE, 3, chipBg, chipBorder);
+            BlitzKitIconRenderer.drawCentered(e.kit.name, e.chipX, laneY,
+                    ActivityTimelineLayout.CHIP_SIZE, ActivityTimelineLayout.CHIP_SIZE, 0.72F);
+        }
+
+        // X-axis labels below track.
+        int axisY = y + 63;
+        String[] ticks = timelineWindowDays == 7
+                ? new String[]{"7d ago", "5d", "2d", "Now"}
+                : new String[]{"30d ago", "20d", "10d", "Now"};
+        drawFitted(ticks[0], trackLeft, axisY, 44, 0.68F, MUTED, 0);
+        drawFitted(ticks[1], trackLeft + trackWidth / 3.0F, axisY, 28, 0.68F, MUTED, 1);
+        drawFitted(ticks[2], trackLeft + (trackWidth * 2.0F) / 3.0F, axisY, 28, 0.68F, MUTED, 1);
+        drawFitted(ticks[3], trackLeft + trackWidth, axisY, 28, 0.68F, TEXT, 2);
+    }
+
+    private void drawTimelineRangePill(int x, int y, int w, int h, String label, boolean selected, boolean hovered) {
+        int bg = selected ? 0xFF24352E : (hovered ? 0xFF23303C : 0xFF141C24);
+        int border = selected ? GREEN : (hovered ? MUTED : PANEL_BORDER);
+        int color = selected ? GREEN : (hovered ? TEXT : MUTED);
+        SocialDraw.roundedBorder(x, y, x + w, y + h, 3, bg, border);
+        drawFitted(label, x + w / 2.0F, y + 3, w - 4, 0.72F, color, 1);
     }
 
     private void drawActivitySectionHeading(String title, int y) {
@@ -885,35 +1582,224 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private void drawStatsState() {
         SocialDraw.enableScissor(layout.contentLeft, layout.contentTop, layout.contentRight, layout.contentBottom);
         try {
+            if (loading) {
+                drawStatsLoadingSkeleton();
+                return;
+            }
             int centerX = (layout.contentLeft + layout.contentRight) / 2;
             int contentWidth = layout.contentRight - layout.contentLeft;
             int top = layout.contentTop + Math.max(4, (layout.contentBottom - layout.contentTop) / 2 - 21);
-            drawFitted(loading ? "Loading statistics" : "Statistics unavailable",
-                    centerX, top, contentWidth - 12, 1.0F, loading ? TEXT : MUTED, 1);
-            if (loading) {
-                int barWidth = Math.min(100, contentWidth - 24);
-                int barLeft = centerX - barWidth / 2;
-                SocialDraw.roundedRect(barLeft, top + 22, barLeft + barWidth, top + 25, 1.5F, CARD_BG);
-                int travel = Math.max(1, barWidth - 24);
-                int offset = Math.round((float) ((Math.sin(System.nanoTime() / 550_000_000.0) + 1.0) * 0.5) * travel);
-                SocialDraw.roundedRect(barLeft + offset, top + 22, barLeft + offset + 24,
-                        top + 25, 1.5F, GREEN);
-            } else {
-                String message = denickedNick != null && player != null
-                        && denickedNick.equalsIgnoreCase(player.getUsername())
-                        ? "This nick's real IGN has not been resolved."
-                        : loadError == null ? "Try opening this profile again shortly." : loadError;
-                java.util.List<String> lines = fontRendererObj.listFormattedStringToWidth(message,
-                        Math.max(32, (int) ((contentWidth - 16) / 0.8F)));
-                int count = Math.min(3, lines.size());
-                for (int i = 0; i < count; i++) {
-                    drawFitted(lines.get(i), centerX, top + 19 + i * 10,
-                            contentWidth - 16, 0.8F, MUTED, 1);
-                }
+            drawFitted("Statistics unavailable",
+                    centerX, top, contentWidth - 12, 1.0F, MUTED, 1);
+            String message = denickedNick != null && player != null
+                    && denickedNick.equalsIgnoreCase(player.getUsername())
+                    ? "This nick's real IGN has not been resolved."
+                    : loadError == null ? "Try opening this profile again shortly." : loadError;
+            java.util.List<String> lines = fontRendererObj.listFormattedStringToWidth(message,
+                    Math.max(32, (int) ((contentWidth - 16) / 0.8F)));
+            int count = Math.min(3, lines.size());
+            for (int i = 0; i < count; i++) {
+                drawFitted(lines.get(i), centerX, top + 19 + i * 10,
+                        contentWidth - 16, 0.8F, MUTED, 1);
             }
         } finally {
             SocialDraw.disableScissor();
         }
+    }
+
+    private void drawStatsLoadingSkeleton() {
+        long now = System.currentTimeMillis();
+        int originY = layout.contentTop;
+        int contentWidth = Math.max(1, layout.contentRight - layout.contentLeft);
+        int[] summaryAccents = {STAT_KILLS, STAT_WINS, STAT_RATIO, STAT_RATIO};
+        int[] summaryLabelWidths = {28, 28, 22, 24};
+        int[] summaryValueWidths = {58, 48, 36, 34};
+
+        for (int i = 0; i < summaryAccents.length; i++) {
+            int x = layout.summaryX(i);
+            int y = originY + layout.summaryY(i);
+            int w = layout.summaryWidth;
+            int h = PlayerProfileLayout.SUMMARY_HEIGHT;
+            if (!rowVisible(y, h)) continue;
+            float nx = (x + w * 0.5F - layout.contentLeft) / (float) contentWidth;
+            float shimmer = profileSkeletonShimmerAt(now, nx, i / 2);
+            SocialDraw.roundedRect(x, y, x + w, y + h, 5, CARD_BG);
+            int accentRgb = summaryAccents[i] & 0x00FFFFFF;
+            int accentAlpha = 110 + Math.round(shimmer * 95.0F);
+            SocialDraw.roundedRect(x + 8, y + 9, x + 11, y + 39, 1.5F,
+                    (accentAlpha << 24) | accentRgb);
+            int maxInner = Math.max(16, w - 26);
+            drawProfileSkeletonBar(x + 17, y + 10,
+                    x + 17 + Math.min(maxInner, summaryLabelWidths[i]), y + 16,
+                    0x4A5B6D, 0x869EB6, shimmer, 1.0F);
+            drawProfileSkeletonBar(x + 17, y + 25,
+                    x + 17 + Math.min(maxInner, summaryValueWidths[i]), y + 36,
+                    blendProfileRgb(0x495A6B, accentRgb, 0.28F),
+                    blendProfileRgb(0x90A7BF, accentRgb, 0.50F),
+                    shimmer, 1.0F);
+        }
+
+        int[] detailColors = {STAT_DEATHS, STAT_GAMES, STAT_KILLS, STAT_KILLS,
+                STAT_WINS, STAT_WINS, STAT_COINS, STAT_GAMES};
+        int[] detailLabelWidths = {36, 36, 46, 48, 44, 48, 30, 44};
+        int[] detailValueWidths = {36, 34, 42, 34, 34, 30, 46, 42};
+        for (int i = 0; i < detailColors.length; i++) {
+            int x = layout.detailX(i);
+            int y = originY + layout.detailY(i);
+            int w = layout.detailWidth;
+            if (!rowVisible(y, 24)) continue;
+            float nx = (x + w * 0.5F - layout.contentLeft) / (float) contentWidth;
+            float shimmer = profileSkeletonShimmerAt(now, nx, 2 + i / 2);
+            SocialDraw.roundedRect(x, y, x + w, y + 24, 4, 0xB01B242D);
+            int labelW = Math.min(Math.max(16, w / 2 - 12), detailLabelWidths[i]);
+            drawProfileSkeletonBar(x + 8, y + 9, x + 8 + labelW, y + 15,
+                    0x4A5B6D, 0x849AB1, shimmer, 1.0F);
+            int valRgb = detailColors[i] & 0x00FFFFFF;
+            int valW = Math.min(Math.max(16, w / 2 - 12), detailValueWidths[i]);
+            drawProfileSkeletonBar(x + w - 8 - valW, y + 9, x + w - 8, y + 15,
+                    blendProfileRgb(0x495868, valRgb, 0.25F),
+                    blendProfileRgb(0x8FA6BE, valRgb, 0.45F),
+                    shimmer, 1.0F);
+        }
+
+        drawSectionHeading("KITS", originY + layout.kitsHeadingY, "");
+        if (!layout.compactKits) drawKitTableHeader(originY + layout.kitsHeaderY);
+
+        int pitch = Math.max(1, kitRowPitch());
+        int firstKitY = originY + kitRowsY();
+        int availableKitRows = Math.max(1, (layout.contentBottom - firstKitY + pitch - 1) / pitch);
+        int skeletonKits = Math.min(6, availableKitRows);
+        int[] kitNameWidths = {72, 58, 84, 64, 78, 54};
+        int[] kitStatColors = {STAT_KILLS, STAT_WINS, STAT_RATIO};
+        for (int i = 0; i < skeletonKits; i++) {
+            int y = firstKitY + i * pitch;
+            if (!rowVisible(y, layout.kitHeight)) break;
+            float rowFade = skeletonKits > 2 && i >= skeletonKits - 2
+                    ? Math.max(0.32F, 1.0F - (i - (skeletonKits - 3)) * 0.34F)
+                    : 1.0F;
+            int bgAlpha = Math.max(45, Math.min(255, Math.round(255.0F * rowFade)));
+            SocialDraw.roundedRect(layout.contentLeft, y, layout.contentRight, y + layout.kitHeight, 4,
+                    (bgAlpha << 24) | (CARD_BG & 0x00FFFFFF));
+
+            int nameY = y + (layout.compactKits ? 7 : 10);
+            int rowIndex = 7 + i;
+            float rankShimmer = profileSkeletonShimmerAt(now, 0.04F, rowIndex);
+            drawProfileSkeletonBar(layout.contentLeft + 10, nameY + 1, layout.contentLeft + 20, nameY + 7,
+                    0x506070, 0x8BA0B6, rankShimmer, rowFade);
+
+            float iconShimmer = profileSkeletonShimmerAt(now, 0.12F, rowIndex);
+            drawProfileSkeletonBar(layout.contentLeft + 31, nameY - 3, layout.contentLeft + 45, nameY + 11,
+                    0x4A5A6B, 0x879DB4, iconShimmer, rowFade);
+
+            int maxNameWidth = Math.max(24, (layout.compactKits ? contentWidth - 60 : layout.kitNameWidth() - 20));
+            int nameW = Math.min(maxNameWidth, kitNameWidths[i % kitNameWidths.length]);
+            float nameShimmer = profileSkeletonShimmerAt(now, 0.28F, rowIndex);
+            drawProfileSkeletonBar(layout.contentLeft + 50, nameY + 1, layout.contentLeft + 50 + nameW, nameY + 8,
+                    0x556678, 0x9AB0C7, nameShimmer, rowFade);
+
+            if (!layout.compactKits) {
+                for (int c = 0; c < kitStatColors.length; c++) {
+                    int right = layout.kitStatRight(c);
+                    int sw = Math.min(Math.max(14, layout.kitStatWidth() - 6), c == 2 ? 24 : 34 - c * 4);
+                    float colShimmer = profileSkeletonShimmerAt(now,
+                            (right - sw * 0.5F - layout.contentLeft) / (float) contentWidth, rowIndex);
+                    int rgb = kitStatColors[c] & 0x00FFFFFF;
+                    drawProfileSkeletonBar(right - sw, nameY + 1, right, nameY + 8,
+                            blendProfileRgb(0x495868, rgb, 0.25F),
+                            blendProfileRgb(0x8FA6BE, rgb, 0.45F),
+                            colShimmer, rowFade);
+                }
+            } else {
+                int cellWidth = (contentWidth - 16) / 3;
+                for (int c = 0; c < kitStatColors.length; c++) {
+                    int cellX = layout.contentLeft + 8 + c * cellWidth;
+                    int sw = Math.max(16, cellWidth - 22);
+                    float colShimmer = profileSkeletonShimmerAt(now,
+                            (cellX + cellWidth * 0.5F - layout.contentLeft) / (float) contentWidth, rowIndex);
+                    int rgb = kitStatColors[c] & 0x00FFFFFF;
+                    drawProfileSkeletonBar(cellX + 4, y + 25, cellX + 4 + sw, y + 32,
+                            blendProfileRgb(0x495868, rgb, 0.25F),
+                            blendProfileRgb(0x8FA6BE, rgb, 0.45F),
+                            colShimmer, rowFade);
+                }
+            }
+        }
+    }
+
+    private void drawCosmeticsLoadingSkeleton() {
+        long now = System.currentTimeMillis();
+        int panelWidth = previewPanelRight - previewPanelLeft;
+        int x = previewPanelLeft + 7;
+        int cellWidth = Math.max(1, panelWidth - 14);
+        int textX = x + 26;
+        int[] labelWidths = {44, 38, 52, 34, 28, 24};
+        int[] valueWidths = {48, 56, 62, 44, 50, 42};
+        for (int i = 0; i < labelWidths.length; i++) {
+            int y = layout.cosmeticsTop + i * layout.cosmeticsRowPitch;
+            int cellHeight = layout.cosmeticsCellHeight;
+            if (y + cellHeight > previewPanelBottom - 4) break;
+            SocialDraw.roundedRect(x, y, x + cellWidth, y + cellHeight, 4, CARD_BG);
+            int iconY = y + Math.max(2, (cellHeight - 14) / 2);
+            int barY = y + Math.max(2, (cellHeight - 6) / 2);
+            float iconShimmer = profileSkeletonShimmerAt(now, 0.12F, i);
+            drawProfileSkeletonBar(x + 6, iconY, x + 20, iconY + 14,
+                    0x4A5A6B, 0x879DB4, iconShimmer, 1.0F);
+            int available = Math.max(16, cellWidth - 36);
+            int lw = Math.min(available / 2, labelWidths[i]);
+            float labelShimmer = profileSkeletonShimmerAt(now, 0.40F, i);
+            drawProfileSkeletonBar(textX, barY, textX + lw, barY + 6,
+                    0x4A5B6D, 0x849AB1, labelShimmer, 1.0F);
+            int vw = Math.min(Math.max(14, available - lw - 8), valueWidths[i]);
+            float valueShimmer = profileSkeletonShimmerAt(now, 0.78F, i);
+            drawProfileSkeletonBar(x + cellWidth - 7 - vw, barY, x + cellWidth - 7, barY + 6,
+                    0x556678, 0x9AB0C7, valueShimmer, 1.0F);
+        }
+    }
+
+    private static void drawLoadingDividerHighlight(int leftX, int rightX, int y, long now) {
+        int span = rightX - leftX;
+        if (span <= 8) return;
+        float progress = (now % 1400L) / 1400.0F;
+        int barWidth = Math.max(24, Math.min(84, span / 4));
+        int center = leftX - barWidth / 2 + (int) ((span + barWidth) * progress);
+        int barLeft = Math.max(leftX, center - barWidth / 2);
+        int barRight = Math.min(rightX, center + barWidth / 2);
+        if (barRight <= barLeft) return;
+        Gui.drawRect(barLeft, y, barRight, y + 1, 0x7065D68A);
+        int coreInset = Math.max(4, (barRight - barLeft) / 4);
+        if (barRight - barLeft > coreInset * 2) {
+            Gui.drawRect(barLeft + coreInset, y, barRight - coreInset, y + 1, 0xE565D68A);
+        }
+    }
+
+    private static float profileSkeletonShimmerAt(long now, float normalizedX, int row) {
+        double waveCenter = ((now % 1650L) / 1650.0D) * 1.6D - 0.3D;
+        double target = waveCenter - row * 0.04D;
+        double dist = Math.abs(normalizedX - target);
+        if (dist >= 0.30D) return 0.0F;
+        return (float) (0.5D * (1.0D + Math.cos(Math.PI * dist / 0.30D)));
+    }
+
+    private static void drawProfileSkeletonBar(int left, int top, int right, int bottom,
+                                               int baseRgb, int highlightRgb, float shimmer, float rowFade) {
+        if (right <= left || bottom <= top) return;
+        int rgb = blendProfileRgb(baseRgb, highlightRgb, shimmer);
+        int alpha = Math.max(18, Math.min(180, Math.round((62.0F + shimmer * 78.0F) * rowFade)));
+        SocialDraw.roundedRect(left, top, right, bottom, 2.0F, (alpha << 24) | (rgb & 0x00FFFFFF));
+    }
+
+    private static int blendProfileRgb(int fromRgb, int toRgb, float t) {
+        float clamped = Math.max(0.0F, Math.min(1.0F, t));
+        int r1 = (fromRgb >> 16) & 0xFF;
+        int g1 = (fromRgb >> 8) & 0xFF;
+        int b1 = fromRgb & 0xFF;
+        int r2 = (toRgb >> 16) & 0xFF;
+        int g2 = (toRgb >> 8) & 0xFF;
+        int b2 = toRgb & 0xFF;
+        int r = Math.round(r1 + (r2 - r1) * clamped);
+        int g = Math.round(g1 + (g2 - g1) * clamped);
+        int b = Math.round(b1 + (b2 - b1) * clamped);
+        return (r << 16) | (g << 8) | b;
     }
 
     private void drawSummaryCard(int x, int y, int width, String label, String value, int accent) {
@@ -930,6 +1816,15 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         int valueWidth = Math.max(34, width / 2 - 6);
         drawFitted(label, x + 8, y + 8, width - valueWidth - 21, 1.0F, MUTED, 0);
         drawFitted(value, x + width - 8, y + 8, valueWidth, 1.0F, valueColor, 2);
+    }
+
+    private void drawWideDetailRow(int x, int y, int width, String label, String value, int valueColor) {
+        if (!rowVisible(y, 24)) return;
+        SocialDraw.roundedRect(x, y, x + width, y + 24, 4, 0xB01B242D);
+        int labelWidth = Math.min(width / 3, Math.max(48, fontRendererObj.getStringWidth(label) + 4));
+        int valueWidth = Math.max(40, width - labelWidth - 22);
+        drawFitted(label, x + 8, y + 8, labelWidth, 1.0F, MUTED, 0);
+        drawFitted(value, x + width - 8, y + 8, valueWidth, 0.92F, valueColor, 2);
     }
 
     private void drawKitTableHeader(int y) {
@@ -949,6 +1844,10 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
                 panelWidth - 24, 0.9F, MUTED, 0);
         Gui.drawRect(previewPanelLeft + 10, headingY + 10,
                 previewPanelRight - 10, headingY + 11, PANEL_BORDER);
+        if (loading) {
+            drawLoadingDividerHighlight(previewPanelLeft + 10, previewPanelRight - 10,
+                    headingY + 10, System.currentTimeMillis());
+        }
 
         if (loading || snapshot == null) {
             int centerX = (previewPanelLeft + previewPanelRight) / 2;
@@ -957,19 +1856,12 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             SocialDraw.enableScissor(previewPanelLeft + 8, sectionTop,
                     previewPanelRight - 8, sectionBottom);
             try {
-                int centerY = sectionTop + Math.max(12, (sectionBottom - sectionTop) / 2);
-                drawFitted(loading ? "Loading cosmetics" : "Cosmetics unavailable",
-                        centerX, centerY - 8, panelWidth - 24, 1.0F, loading ? TEXT : MUTED, 1);
                 if (loading) {
-                    int barWidth = Math.min(100, panelWidth - 36);
-                    int barLeft = centerX - barWidth / 2;
-                    SocialDraw.roundedRect(barLeft, centerY + 7, barLeft + barWidth,
-                            centerY + 10, 1.5F, CARD_BG);
-                    int travel = Math.max(1, barWidth - 24);
-                    int offset = Math.round((float) ((Math.sin(System.nanoTime() / 550_000_000.0) + 1.0)
-                            * 0.5) * travel);
-                    SocialDraw.roundedRect(barLeft + offset, centerY + 7,
-                            barLeft + offset + 24, centerY + 10, 1.5F, GREEN);
+                    drawCosmeticsLoadingSkeleton();
+                } else {
+                    int centerY = sectionTop + Math.max(12, (sectionBottom - sectionTop) / 2);
+                    drawFitted("Cosmetics unavailable",
+                            centerX, centerY - 8, panelWidth - 24, 1.0F, MUTED, 1);
                 }
             } finally {
                 SocialDraw.disableScissor();
@@ -1158,25 +2050,39 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
     private void drawKitActivityRow(int x, int y, int width, GoStatsBlitzClient.Kit kit) {
         if (!rowVisible(y, kitRowHeight())) return;
         int cardLeft = x + 4;
-        SocialDraw.roundedRect(cardLeft, y, x + width, y + kitRowHeight(), 4, CARD_BG);
-        Gui.drawRect(cardLeft, y + 6, cardLeft + 2, y + kitRowHeight() - 6, GREEN);
+        java.time.Instant latest = kitLatestInstant(kit);
+        int accent = activityRecencyColor(latest);
+        boolean selected = selectedTimelineKit != null && selectedTimelineKit.equalsIgnoreCase(kit.name);
+        if (selected) {
+            SocialDraw.roundedBorder(cardLeft, y, x + width, y + kitRowHeight(), 4, 0xFF212E3A, accent);
+        } else {
+            SocialDraw.roundedRect(cardLeft, y, x + width, y + kitRowHeight(), 4, CARD_BG);
+        }
+        Gui.drawRect(cardLeft, y + 6, cardLeft + 2, y + kitRowHeight() - 6, accent);
         String title = kitTitle(kit);
         BlitzKitIconRenderer.draw(kit.name, cardLeft + 8, y + 5);
         int titleLeft = cardLeft + 30;
         int titleRight = x + width - 10;
+        String age = formatRelativeAge(latest);
+        if (!age.isEmpty()) {
+            int ageWidth = Math.min(72, Math.round(fontRendererObj.getStringWidth(age) * 0.74F) + 4);
+            drawFitted(age, titleRight, y + 9, ageWidth, 0.74F, accent, 2);
+            titleRight -= ageWidth + 6;
+        }
         if (activityLevelChanged(kit)) {
             String transition = "LEVEL UP  "
                     + activityLevelLabel(kit.activity.levelBefore, kit.activity.prestigeBefore)
                     + " → "
                     + activityLevelLabel(kit.activity.levelAfter, kit.activity.prestigeAfter);
-            int badgeWidth = Math.min(width - 30,
-                    Math.round(fontRendererObj.getStringWidth(transition) * 0.72F) + 14);
+            int maxBadge = Math.max(40, titleRight - titleLeft - 36);
+            int badgeWidth = Math.min(maxBadge,
+                    Math.round(fontRendererObj.getStringWidth(transition) * 0.70F) + 12);
             int badgeLeft = titleRight - badgeWidth;
-            SocialDraw.roundedRect(badgeLeft, y + 5, titleRight, y + 20, 4, 0xFF3A3120);
-            drawFitted(transition, titleRight - 6, y + 9, badgeWidth - 10, 0.72F, GOLD, 2);
-            titleRight = badgeLeft - 7;
+            SocialDraw.roundedRect(badgeLeft, y + 5, titleRight, y + 19, 4, 0xFF3A3120);
+            drawFitted(transition, titleRight - 5, y + 9, badgeWidth - 8, 0.70F, GOLD, 2);
+            titleRight = badgeLeft - 6;
         }
-        drawFitted(title, titleLeft, y + 8, titleRight - titleLeft, 1.0F, kitLevelColor(kit), 0);
+        drawFitted(title, titleLeft, y + 8, Math.max(24, titleRight - titleLeft), 1.0F, kitLevelColor(kit), 0);
         java.util.List<String> metrics = new java.util.ArrayList<String>();
         if (kit.activity.games >= 0) metrics.add(activityGain(kit.activity.games, "games", EnumChatFormatting.AQUA));
         if (kit.activity.kills >= 0) metrics.add(activityGain(kit.activity.kills, "kills", EnumChatFormatting.GREEN));
@@ -1187,26 +2093,28 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             String fallback = kit.activity.timePlayedSeconds >= 0
                     ? "Playtime gained: " + formatDuration(kit.activity.timePlayedSeconds)
                     : "Counter gains unavailable";
-            drawFitted(fallback, metricLeft, y + 29, metricRight - metricLeft, 0.82F, MUTED, 0);
+            drawFitted(fallback, metricLeft, y + 26, metricRight - metricLeft, 0.82F, MUTED, 0);
         } else {
             int metricWidth = (metricRight - metricLeft) / metrics.size();
             for (int i = 0; i < metrics.size(); i++) {
                 int cellLeft = metricLeft + i * metricWidth;
-                if (i > 0) Gui.drawRect(cellLeft, y + 27, cellLeft + 1, y + 39, 0xFF2B3640);
-                drawFitted(metrics.get(i), cellLeft + metricWidth / 2.0F, y + 29,
+                if (i > 0) Gui.drawRect(cellLeft, y + 25, cellLeft + 1, y + 36, 0xFF2B3640);
+                drawFitted(metrics.get(i), cellLeft + metricWidth / 2.0F, y + 26,
                         metricWidth - 8, 0.82F, TEXT, 1);
             }
         }
-        int checkDivider = cardLeft + (metricRight - cardLeft) / 2;
-        Gui.drawRect(checkDivider, y + 47, checkDivider + 1, y + 74, 0xFF2B3640);
-        drawFitted("OLDER SAVED CHECK", cardLeft + 10, y + 48,
-                checkDivider - cardLeft - 17, 0.66F, MUTED, 0);
-        drawFitted("LATEST SAVED CHECK", checkDivider + 8, y + 48,
-                metricRight - checkDivider - 8, 0.66F, MUTED, 0);
-        drawFitted(activityTime(kit.activityAfter), cardLeft + 10, y + 62,
-                checkDivider - cardLeft - 17, 0.72F, TEXT, 0);
-        drawFitted(activityTime(kit.activityBefore), checkDivider + 8, y + 62,
-                metricRight - checkDivider - 8, 0.72F, TEXT, 0);
+        Gui.drawRect(cardLeft + 10, y + 41, metricRight, y + 42, 0xFF25303A);
+        String span = activityCompactSpan(kit.activityAfter, kit.activityBefore);
+        String shortRange = activityShortDateRange(kit.activityAfter, kit.activityBefore);
+        String windowLine;
+        if (!span.isEmpty() && !shortRange.isEmpty()) {
+            windowLine = span + " window  ·  " + shortRange;
+        } else if (!shortRange.isEmpty()) {
+            windowLine = shortRange;
+        } else {
+            windowLine = activityTime(kit.activityAfter) + " → " + activityTime(kit.activityBefore);
+        }
+        drawFitted(windowLine, cardLeft + 10, y + 47, metricRight - cardLeft - 10, 0.72F, MUTED, 0);
     }
 
     private void drawSectionHeading(String title, int y, String trailing) {
@@ -1229,6 +2137,19 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
         renderedScrollOffset = Math.max(0.0F, Math.min(renderedScrollOffset, maxScroll));
         if (maxScroll <= 0) draggingStatsScrollbar = false;
+    }
+
+    private void scrollToActivityKit(String kitName) {
+        if (kitName == null || displayedKits == null || displayedKits.isEmpty()) return;
+        for (int i = 0; i < displayedKits.size(); i++) {
+            if (kitName.equalsIgnoreCase(displayedKits.get(i).name)) {
+                updateStatsScrollBounds();
+                int target = kitRowsY() + i * kitRowPitch() - 16;
+                scrollOffset = Math.max(0, Math.min(maxScroll, target));
+                renderedScrollOffset = scrollOffset;
+                return;
+            }
+        }
     }
 
     private void updateScrollForDraw(int mouseY) {
@@ -1334,10 +2255,30 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         }
     }
 
+    private static final class SocialLinkTarget {
+        private final int x;
+        private final int y;
+        private final int width;
+        private final int height;
+        private final String value;
+
+        private SocialLinkTarget(int x, int y, int width, int height, String value) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.value = value;
+        }
+    }
+
     private final class ProfileActionButton extends GuiButton {
         private final int accent;
         ProfileActionButton(int id, int x, int y, int width, String text, int accent) {
-            super(id, x, y, width, 20, text);
+            this(id, x, y, width, 20, text, accent);
+        }
+
+        ProfileActionButton(int id, int x, int y, int width, int height, String text, int accent) {
+            super(id, x, y, width, height, text);
             this.accent = accent;
         }
 
@@ -1347,10 +2288,15 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             boolean over = enabled && mouseX >= xPosition && mouseX < xPosition + width
                     && mouseY >= yPosition && mouseY < yPosition + height;
             boolean selected = id == ID_SORT && !recentKits || id == ID_ACTIVITY && recentKits;
-            SocialDraw.roundedBorder(xPosition, yPosition, xPosition + width, yPosition + height, 5,
-                    selected || over ? 0xFF24352E : PANEL_BG, selected || over ? accent : PANEL_BORDER);
-            drawFitted(displayString, xPosition + width / 2.0F, yPosition + 6,
-                    width - 12, 1.0F, selected || over ? accent : TEXT, 1);
+            int textColor = id == ID_ACTIVITY_ORDER ? (over ? TEXT : MUTED) : (selected || over ? accent : TEXT);
+            int bg = id == ID_ACTIVITY_ORDER ? (over ? 0xFF23303C : 0xFF172028) : (selected || over ? 0xFF24352E : PANEL_BG);
+            int border = id == ID_ACTIVITY_ORDER ? (over ? GREEN : PANEL_BORDER) : (selected || over ? accent : PANEL_BORDER);
+            float scale = height < 18 ? 0.78F : 1.0F;
+            float textY = yPosition + (height - 8.0F * scale) / 2.0F;
+            SocialDraw.roundedBorder(xPosition, yPosition, xPosition + width, yPosition + height,
+                    height < 18 ? 4 : 5, bg, border);
+            drawFitted(displayString, xPosition + width / 2.0F, textY,
+                    width - 10, scale, textColor, 1);
         }
     }
 
@@ -1361,8 +2307,17 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
         }
         if ((button.id == ID_SORT || button.id == ID_ACTIVITY) && snapshot != null) {
             recentKits = button.id == ID_ACTIVITY;
+            if (!recentKits) selectedTimelineKit = null;
             updateDisplayedKits();
             if (recentKits) requestKitActivity();
+            return;
+        }
+        if (button.id == ID_ACTIVITY_ORDER && snapshot != null && recentKits) {
+            activitySortByRecency = !activitySortByRecency;
+            if (activityOrderButton != null) {
+                activityOrderButton.displayString = activitySortByRecency ? "Order: Recent" : "Order: Gained";
+            }
+            updateDisplayedKits();
             return;
         }
         if (button.id == ID_CANCEL) {
@@ -1410,7 +2365,50 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             return;
         }
         boolean overViewToggle = isVisibleButtonAt(kitSortButton, mouseX, mouseY)
-                || isVisibleButtonAt(kitActivityButton, mouseX, mouseY);
+                || isVisibleButtonAt(kitActivityButton, mouseX, mouseY)
+                || isVisibleButtonAt(activityOrderButton, mouseX, mouseY);
+        if (mouseButton == 0 && !overViewToggle && hasActivityTimeline()
+                && mouseX >= layout.contentLeft && mouseX <= layout.contentRight
+                && mouseY >= layout.contentTop && mouseY <= layout.contentBottom) {
+            if (mouseY >= lastTimelineRangeTop && mouseY <= lastTimelineRangeBottom) {
+                if (mouseX >= lastTimeline7dLeft && mouseX <= lastTimeline7dRight) {
+                    timelineWindowDays = 7;
+                    return;
+                }
+                if (mouseX >= lastTimeline30dLeft && mouseX <= lastTimeline30dRight) {
+                    timelineWindowDays = 30;
+                    return;
+                }
+            }
+            if (lastTimelineLayout != null) {
+                ActivityTimelineLayout.Entry hit = ActivityTimelineLayout.hitTest(
+                        lastTimelineLayout, mouseX, mouseY, lastTimelineLaneBaseY, TIMELINE_LANE_PITCH);
+                if (hit != null) {
+                    if (selectedTimelineKit != null && selectedTimelineKit.equalsIgnoreCase(hit.kit.name)) {
+                        selectedTimelineKit = null;
+                    } else {
+                        selectedTimelineKit = hit.kit.name;
+                        scrollToActivityKit(hit.kit.name);
+                    }
+                    return;
+                }
+            }
+        }
+        if (mouseButton == 0 && !overViewToggle && !recentKits
+                && mouseX >= layout.contentLeft && mouseX <= layout.contentRight
+                && mouseY >= layout.contentTop && mouseY <= layout.contentBottom) {
+            for (SocialLinkTarget target : visibleSocialLinks) {
+                if (mouseX >= target.x && mouseX <= target.x + target.width
+                        && mouseY >= target.y && mouseY <= target.y + target.height) {
+                    if (target.value != null && !target.value.isEmpty()) {
+                        GuiScreen.setClipboardString(target.value);
+                        copiedSocialValue = target.value;
+                        copiedSocialAt = System.currentTimeMillis();
+                    }
+                    return;
+                }
+            }
+        }
         if (mouseButton == 0 && !overViewToggle && maxScroll > 0
                 && mouseX >= layout.contentLeft && mouseX <= layout.contentRight
                 && mouseY >= layout.contentTop && mouseY <= layout.contentBottom) {
@@ -1681,6 +2679,32 @@ public final class TeamPlayerProfileGUI extends GuiScreen implements GomodMenuKe
             case 9: return LEVEL_IX;
             case 10: return LEVEL_X;
             default: return MUTED;
+        }
+    }
+
+    private EnumChatFormatting kitLevelChatColor(GoStatsBlitzClient.Kit kit) {
+        if (kit != null && isUnupgradableKitName(kit.name)) {
+            return EnumChatFormatting.GREEN;
+        }
+        if (kit == null || displayedKitPrestige(kit) > 0L) {
+            return EnumChatFormatting.GOLD;
+        }
+        long level = displayedKitLevel(kit);
+        if (level <= 0L && (kit.games > 0L || isBasicKitName(kit.name))) {
+            level = 1L;
+        }
+        switch ((int) level) {
+            case 1:
+            case 2: return EnumChatFormatting.GREEN;
+            case 3:
+            case 4: return EnumChatFormatting.DARK_GREEN;
+            case 5:
+            case 6: return EnumChatFormatting.YELLOW;
+            case 7:
+            case 8: return EnumChatFormatting.GOLD;
+            case 9: return EnumChatFormatting.RED;
+            case 10: return EnumChatFormatting.DARK_RED;
+            default: return EnumChatFormatting.GRAY;
         }
     }
 

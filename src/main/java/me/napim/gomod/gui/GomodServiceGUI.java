@@ -28,6 +28,7 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
     private static final int ID_FRIEND_HUD = 2;
     private static final int ID_FRIENDS = 3;
     private static final int ID_SOCIAL_KEYS = 4;
+    private static final int ID_UPDATES = 5;
 
     private static final int BTN_W = 200;
     private static final int BTN_H = 20;
@@ -36,6 +37,7 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
     private final GuiScreen parent;
     private GuiButton connectButton;
     private GuiButton friendHudButton;
+    private GuiButton updatesButton;
     private GuiButton socialKeysButton;
     private boolean awaitingSocialKey;
     private final Set<Integer> capturedSocialKeys = new LinkedHashSet<Integer>();
@@ -57,7 +59,7 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
         int sh = this.height;
         int gapSmall = 6;
         int gapBeforeBack = 10;
-        int stackH = BTN_H * 4 + gapSmall * 2 + gapBeforeBack;
+        int stackH = BTN_H * 5 + gapSmall * 3 + gapBeforeBack;
         int headerBottom = 100;
         int y = headerBottom + Math.max(0, (sh - headerBottom - stackH) / 2);
         int rowLeft = cx - BTN_W / 2;
@@ -74,6 +76,9 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
                 EnumChatFormatting.AQUA + "gomod Social"));
         this.socialKeysButton = new GuiButton(ID_SOCIAL_KEYS, rowLeft + pairHalfW + BTN_PAIR_GAP, y, pairHalfW, BTN_H, "");
         this.buttonList.add(this.socialKeysButton);
+        y += BTN_H + gapSmall;
+        this.updatesButton = new GuiButton(ID_UPDATES, rowLeft, y, BTN_W, BTN_H, getUpdatesButtonText());
+        this.buttonList.add(this.updatesButton);
         y += BTN_H + gapBeforeBack;
         this.buttonList.add(new GuiButton(ID_BACK, rowLeft, y, BTN_W, BTN_H,
                 EnumChatFormatting.GRAY + "Back"));
@@ -105,6 +110,9 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
         }
 
         syncConnectButtonState();
+        if (this.updatesButton != null) {
+            this.updatesButton.displayString = getUpdatesButtonText();
+        }
         pollSocialChordCapture();
 
         super.drawScreen(mouseX, mouseY, partialTicks);
@@ -150,6 +158,9 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
             case ID_SOCIAL_KEYS:
                 awaitingSocialKey = true;
                 capturedSocialKeys.clear();
+                break;
+            case ID_UPDATES:
+                this.mc.displayGuiScreen(new GomodUpdateGUI(this));
                 break;
             default:
                 break;
@@ -249,6 +260,18 @@ public class GomodServiceGUI extends GuiScreen implements GomodMenuKeyboardCaptu
 
     private String getFriendHudButtonText() {
         return EnumChatFormatting.GOLD + "Friend Inventory HUD";
+    }
+
+    private String getUpdatesButtonText() {
+        if (me.napim.gomod.features.GomodAutoUpdater.isStagedForExit()) {
+            return EnumChatFormatting.GREEN + "Updates (Ready on Exit)";
+        }
+        if (me.napim.gomod.features.GomodAutoUpdater.isUpdateAvailable()) {
+            me.napim.gomod.features.GomodAutoUpdater.ReleaseInfo info =
+                    me.napim.gomod.features.GomodAutoUpdater.getLatestRelease();
+            return EnumChatFormatting.GREEN + "Updates (" + (info != null ? info.version : "New!") + ")";
+        }
+        return EnumChatFormatting.WHITE + "Updates";
     }
 
     private String getSocialKeysLabelText() {

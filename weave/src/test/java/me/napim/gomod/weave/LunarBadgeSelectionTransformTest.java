@@ -38,7 +38,7 @@ public final class LunarBadgeSelectionTransformTest {
     private static final String LOGO_SYNC = "me/napim/gomod/features/GomodLogoColorSync";
     private static final String BADGE_CATALOG = "me/napim/gomod/features/LunarCustomBadgeCatalog";
     private static final File ACTIVE_LUNAR_JAR =
-            new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+            new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
 
     @Test
     public void structuralBadgeSelectionHookMatchesArbitrarilyObfuscatedBadgeManager() {

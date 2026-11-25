@@ -32,8 +32,17 @@ public final class LunarLockerStateBridge {
         boolean hidePlus = GomodLunarPlusLocker.isNoPlusSelectedForDisplay();
         if ("lunarPlus".equals(key) && value instanceof JsonObject && (fullAccess || hidePlus)) {
             JsonObject copy = ((JsonObject) value).deepCopy();
+            if (fullAccess) copy.addProperty("isLunarPlus", true);
             copy.addProperty("gomodHidePlus", hidePlus);
-            if (hidePlus) copy.addProperty("plusColor", "#000000");
+            if (hidePlus) {
+                copy.addProperty("plusColor", "#000000");
+            } else if (fullAccess) {
+                int selectedPlus = GomodLunarPlusLocker.activeColorForLocker(0);
+                if (selectedPlus > 0) {
+                    copy.addProperty("plusColor",
+                            String.format(java.util.Locale.ROOT, "#%06X", selectedPlus & 0xFFFFFF));
+                }
+            }
             value = copy;
         }
         if (fullAccess) {

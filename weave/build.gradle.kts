@@ -12,7 +12,7 @@ group = "me.napim"
 
 val gomodVersion = Properties().run {
     rootProject.file("../src/main/resources/gomod.version.properties").inputStream().use { load(it) }
-    getProperty("version", "1.0.0").trim()
+    getProperty("version", "1.0.1").trim()
 }
 version = gomodVersion
 

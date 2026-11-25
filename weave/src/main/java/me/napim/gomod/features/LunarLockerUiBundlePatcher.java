@@ -1686,15 +1686,15 @@ public final class LunarLockerUiBundlePatcher {
     private static final String CHUNKED_APPEARANCE_RESOURCE =
             "/gomod/lunar-cosmetic-appearance-chunked-ui-fragment.js";
     private static final String CHUNKED_APPEARANCE_MARKER =
-            "\"data-gomod-cosmetic-appearance\":\"v11-chunked\"";
+            "\"data-gomod-cosmetic-appearance\":\"v12-chunked\"";
     private static final String CHUNKED_EXTRAS_RESOURCE =
             "/gomod/lunar-locker-extras-chunked-ui-fragment.js";
     private static final String CHUNKED_LOCKER_EXTRAS_MARKER =
-            "\"data-gomod-locker-extras\":\"v3-chunked\"";
+            "\"data-gomod-locker-extras\":\"v4-chunked\"";
     private static final String CHUNKED_BADGE_STUDIO_RESOURCE =
             "/gomod/lunar-studio-chunked-ui-fragment.js";
     private static final String CHUNKED_BADGE_STUDIO_MARKER =
-            "\"data-gomod-badge-studio\":\"v2-chunked\"";
+            "\"data-gomod-badge-studio\":\"v3-chunked\"";
     private static final String CHUNKED_OFFICIAL_LOADOUT_RESOURCE =
             "/gomod/lunar-official-loadout-chunked-ui-fragment.js";
     private static final String CHUNKED_OFFICIAL_LOADOUT_MARKER =
@@ -1703,6 +1703,26 @@ public final class LunarLockerUiBundlePatcher {
             "/gomod/lunar-fits-actions-chunked-ui-fragment.js";
     private static final String CHUNKED_FITS_ACTIONS_MARKER =
             "\"data-gomod-fits-actions\":\"v1-chunked\"";
+    private static final String CHUNKED_NAMETAG_LOGO_COLOR_RESOURCE =
+            "/gomod/lunar-nametag-logo-color-chunked-ui-fragment.js";
+    private static final String CHUNKED_NAMETAG_LOGO_COLOR_MARKER =
+            "\"data-gomod-nametag-logo-color\":\"v4-chunked\"";
+    private static final Pattern CHUNKED_NAMETAG_LOGO_EMPTY_PATTERN = Pattern.compile(
+            "([A-Za-z0-9_$]+)&&([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{children:([A-Za-z0-9_$]+)\\(\"gui\\.nametag\\.noLogoColors\"\\)\\}\\)");
+    private static final Pattern CHUNKED_NAMETAG_PREVIEW_LOGO_PATTERN = Pattern.compile(
+            "logoColor:([A-Za-z0-9_$]+)==null\\?void 0:\\1\\.lunarPlus\\.logoColor,plusColor:");
+    private static final Pattern CHUNKED_NAMETAG_PLUS_COLORS_GRID_PATTERN = Pattern.compile(
+            "([A-Za-z0-9_$]+)=\\(\\{slots:([A-Za-z0-9_$]+),active:([A-Za-z0-9_$]+),message:([A-Za-z0-9_$]+)\\}\\)=>\\{"
+                    + "const ([A-Za-z0-9_$]+)=([A-Za-z0-9_$]+)=>\\{\\6!==\\3&&([A-Za-z0-9_$]+)\\.lunarPlus\\.setColor\\(\\6\\)\\};"
+                    + "return ([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{message:\\4,children:\\2\\.map\\(\\(\\{item:([A-Za-z0-9_$]+),hidden:([A-Za-z0-9_$]+)\\}\\)=>"
+                    + "\\8\\.jsx\\(([A-Za-z0-9_$]+),\\{label:\\10\\.name,selected:\\10\\.color===\\3,hidden:\\11,onSelect:\\(\\)=>\\5\\(\\10\\.color\\),"
+                    + "children:\\8\\.jsx\\(([A-Za-z0-9_$]+),\\{color:([A-Za-z0-9_$]+)\\(\\10\\.color\\)\\}\\)\\},\\10\\.color\\)\\)\\}\\)\\}");
+    private static final Pattern CHUNKED_NAMETAG_BADGES_SCROLL_PATTERN = Pattern.compile(
+            "className:\"nametagTour4\",title:([A-Za-z0-9_$]+)\\(\"gui\\.nametag\\.badge\"\\),count:([^,]+),scrollable:!0,");
+    private static final String CHUNKED_NAMETAG_ROOT_STYLE_ANCHOR =
+            "display:\"flex\",flexDirection:\"column\",gap:\"var(--spacings-radii-4)\",flex:\"1 1 auto\",minWidth:0,minHeight:0,alignSelf:\"stretch\"";
+    private static final String CHUNKED_NAMETAG_ROOT_STYLE_SCROLL =
+            CHUNKED_NAMETAG_ROOT_STYLE_ANCHOR + ",overflowY:\"auto\",overflowX:\"hidden\",paddingRight:\"4px\"";
     private static final Pattern CHUNKED_FITS_TEXT_INPUT_PATTERN = Pattern.compile(
             "([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{autoFocus:!0,ref:[A-Za-z0-9_$]+,value:[A-Za-z0-9_$]+,maxCharacters:32,");
     private static final String CHUNKED_EDITED_SORT_MARKER = "id:\"edited-first\"";
@@ -1719,9 +1739,11 @@ public final class LunarLockerUiBundlePatcher {
     private static final Pattern CHUNKED_INDEX5_FINISH_BUTTON_PATTERN = Pattern.compile(
             "([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{text:\"Finish\",type:\"secondary\"");
     private static final Pattern CHUNKED_INDEX5_SETTINGS_COMPONENT_PATTERN = Pattern.compile(
-            ",([A-Za-z0-9_$]+)=\\(\\{cosmetics:e,cosmetic:n,onReturn:s\\}\\)=>\\{"
-                    + "const i=([A-Za-z0-9_$]+)\\.useRef\\(!1\\),\\[o,c\\]=\\2\\.useState\\(\\[\\]\\),"
-                    + "\\[a,d\\]=\\2\\.useState\\(n\\),\\[u,l\\]=\\2\\.useState\\(null\\)");
+            ",([A-Za-z0-9_$]+)=\\(\\{cosmetics:([A-Za-z0-9_$]+),cosmetic:([A-Za-z0-9_$]+),onReturn:([A-Za-z0-9_$]+)\\}\\)=>\\{"
+                    + "const ([A-Za-z0-9_$]+)=([A-Za-z0-9_$]+)\\.useRef\\(!1\\),"
+                    + "\\[([A-Za-z0-9_$]+),[A-Za-z0-9_$]+\\]=\\6\\.useState\\(\\[\\]\\),"
+                    + "\\[[A-Za-z0-9_$]+,[A-Za-z0-9_$]+\\]=\\6\\.useState\\(\\3\\),"
+                    + "\\[([A-Za-z0-9_$]+),[A-Za-z0-9_$]+\\]=\\6\\.useState\\(null\\)");
     private static final Pattern CHUNKED_INDEX5_COSMETIC_SETTINGS_PATTERN = Pattern.compile(
             "([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{title:\"Cosmetic Settings\",children:");
     private static final Pattern CHUNKED_TOOLTIP_PATTERN = Pattern.compile(
@@ -1741,7 +1763,7 @@ public final class LunarLockerUiBundlePatcher {
                     + "const\\[([A-Za-z0-9_$]+),([A-Za-z0-9_$]+)\\]=([A-Za-z0-9_$]+)\\.useState\\(\\{visible:!1,cachedCosmetic:\\2\\}\\)[;,]"
                     + ".*?(options:([A-Za-z0-9_$]+)\\?([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{cosmetic:\\12,(?:visible:\\8\\.visible,)?)");
     private static final Pattern CHUNKED_COSMETIC_CARD_HEADER_PATTERN = Pattern.compile(
-            "const\\{cosmetic:([A-Za-z0-9_$]+),[^}]{1,400},topRight:([A-Za-z0-9_$]+)\\}=e[;,]");
+            "const\\{cosmetic:([A-Za-z0-9_$]+),[^}]{1,400},topRight:([A-Za-z0-9_$]+)\\}=[A-Za-z0-9_$]+[;,]");
     private static final Pattern CHUNKED_EMOTE_TILE_PATTERN = Pattern.compile(
             "(onMouseEnter:\\(\\)=>\\{([A-Za-z0-9_$]+)\\.model\\.playEmote\\(`EMOTE_MANNEQUIN_\\$\\{([A-Za-z0-9_$]+)\\.emote\\.id\\}`\\)\\})");
     private static final Pattern CHUNKED_BADGE_TILE_PATTERN = Pattern.compile(
@@ -1770,6 +1792,12 @@ public final class LunarLockerUiBundlePatcher {
                     + "children:\\3\\.jsx\\(([A-Za-z0-9_$]+),\\{src:\\2\\.ownedBadge\\.badge\\.resource,"
                     + "alt:\\2\\.ownedBadge\\.badge\\.name,animated:\\2\\.ownedBadge\\.badge\\.animated,"
                     + "width:([^,]+),height:([^}]+)\\}\\)\\}\\)");
+    private static final Pattern CHUNKED_BADGE_IMAGE_STYLED_PATTERN = Pattern.compile(
+            "([A-Za-z0-9_$]+)=([A-Za-z0-9_$]+)=>\\{([^}]+?)"
+                    + "return ([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{"
+                    + "children:\\4\\.jsx\\(([A-Za-z0-9_$]+),\\{src:\\2\\.ownedBadge\\.badge\\.resource,"
+                    + "alt:\\2\\.ownedBadge\\.badge\\.name,animated:\\2\\.ownedBadge\\.badge\\.animated,"
+                    + "width:([^,]+),height:([^}]+)\\}\\)\\}\\)\\}");
     private static final Pattern CHUNKED_YOUR_LOADOUT_TITLE_BAR_PATTERN = Pattern.compile(
             "([A-Za-z0-9_$]+)=([A-Za-z0-9_$]+)=>([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),"
                     + "\\{canResize:!0,name:\"Your Loadout\",icon:\\2\\.icon,onHelp:\\2\\.onHelp\\}\\)");
@@ -1791,6 +1819,13 @@ public final class LunarLockerUiBundlePatcher {
                     + "(children:\\5\\.jsx\\([A-Za-z0-9_$]+,\\{ownedBadge:\\2,size:\"lg\"\\}\\)\\}),"
                     + "(`BADGE_\\$\\{\\2\\.badge\\.id\\}`)"
                     + "\\):null");
+    private static final Pattern CHUNKED_BADGE_TILE_NAMETAG_PATTERN = Pattern.compile(
+            "([A-Za-z0-9_$]+)=\\(\\{ownedBadge:([A-Za-z0-9_$]+),locked:([A-Za-z0-9_$]+),"
+                    + "equipped:([A-Za-z0-9_$]+),onSelect:([A-Za-z0-9_$]+)\\}\\)=>"
+                    + "([A-Za-z0-9_$]+)\\.jsx\\(([A-Za-z0-9_$]+),\\{label:\\2\\.badge\\.name,"
+                    + "size:\"lg\",tooltip:\\6\\.jsx\\(([A-Za-z0-9_$]+),\\{ownedBadge:\\2,locked:\\3\\}\\),"
+                    + "selected:\\4,locked:\\3,onSelect:\\(\\)=>\\5\\(\\2\\.badge\\.id\\),"
+                    + "children:(\\6\\.jsx\\([A-Za-z0-9_$]+,\\{ownedBadge:\\2,size:\"tile\"\\}\\))\\}\\)");
     private static final String CHUNKED_OVERLAY_LAYER_ANCHOR =
             "display:\"flex\",flexDirection:\"column\",alignItems:\"flex-start\","
                     + "gap:\"4px\",position:\"absolute\",right:0,top:0";
@@ -1876,6 +1911,7 @@ public final class LunarLockerUiBundlePatcher {
         final String chunkedBadgeStudio;
         final String chunkedOfficialLoadout;
         final String chunkedFitsActions;
+        final String chunkedNametagLogoColor;
         final String homeQueueFragment;
         try {
             chunkedFragment = readChunkedAppearanceFragment();
@@ -1883,6 +1919,7 @@ public final class LunarLockerUiBundlePatcher {
             chunkedBadgeStudio = readChunkedBadgeStudioFragment();
             chunkedOfficialLoadout = readChunkedOfficialLoadoutFragment();
             chunkedFitsActions = readChunkedFitsActionsFragment();
+            chunkedNametagLogoColor = readChunkedNametagLogoColorFragment();
             homeQueueFragment = readHomeQueueFragment();
         } catch (IOException error) {
             System.err.println("[gomod] Chunked Locker resource unavailable: "
@@ -1903,22 +1940,48 @@ public final class LunarLockerUiBundlePatcher {
         }
         Path mainChunk = findChunkedLockerMainFile(staticDir);
         if (mainChunk != null) {
-            patchChunkFile(uiRoot, mainChunk,
-                    source -> transformChunkedFitsActionsIndex5(
-                            transformChunkedOfficialLoadoutIndex5(
-                                    transformChunkedBadgeStudioIndex5(
-                                            transformChunkedLockerExtrasIndex5(
-                                                    transformChunkedCosmeticAppearanceIndex5(source, chunkedFragment),
-                                                    chunkedExtras),
-                                            chunkedBadgeStudio),
-                                    chunkedOfficialLoadout),
-                            chunkedFitsActions));
+            patchChunkFile(uiRoot, mainChunk, source -> {
+                String current = applyOptionalChunkStage(uiRoot, mainChunk, "cosmetic-appearance", currentOr(source),
+                        s -> transformChunkedCosmeticAppearanceIndex5(s, chunkedFragment));
+                current = applyOptionalChunkStage(uiRoot, mainChunk, "locker-extras", current,
+                        s -> transformChunkedLockerExtrasIndex5(s, chunkedExtras));
+                current = applyOptionalChunkStage(uiRoot, mainChunk, "badge-studio", current,
+                        s -> transformChunkedBadgeStudioIndex5(s, chunkedBadgeStudio));
+                current = applyOptionalChunkStage(uiRoot, mainChunk, "official-loadout", current,
+                        s -> transformChunkedOfficialLoadoutIndex5(s, chunkedOfficialLoadout));
+                current = applyOptionalChunkStage(uiRoot, mainChunk, "fits-actions", current,
+                        s -> transformChunkedFitsActionsIndex5(s, chunkedFitsActions));
+                current = applyOptionalChunkStage(uiRoot, mainChunk, "nametag-logo-color", current,
+                        s -> transformChunkedNametagLogoColorIndex5(s, chunkedNametagLogoColor));
+                return current;
+            });
+        }
+    }
+
+    private static String currentOr(String value) {
+        return value;
+    }
+
+    private static String applyOptionalChunkStage(Path uiRoot, Path file, String stageName,
+                                                  String source, BundleTransform transform) {
+        try {
+            return transform.apply(source);
+        } catch (UnsupportedBundleException error) {
+            System.out.println("[gomod] Locker chunk stage skipped (" + stageName + "): "
+                    + uiRoot.relativize(file).toString().replace('\\', '/')
+                    + " reason=" + error.getMessage());
+            return source;
         }
     }
 
     private static String readChunkedFitsActionsFragment() throws IOException {
         return readChunkedResource(CHUNKED_FITS_ACTIONS_RESOURCE, "GomodFitsActionsCreate=",
                 CHUNKED_FITS_ACTIONS_MARKER, "chunked fits actions UI fragment");
+    }
+
+    private static String readChunkedNametagLogoColorFragment() throws IOException {
+        return readChunkedResource(CHUNKED_NAMETAG_LOGO_COLOR_RESOURCE, "GomodNametagLogoColorCreate=",
+                CHUNKED_NAMETAG_LOGO_COLOR_MARKER, "chunked nametag logo color UI fragment");
     }
 
     private static String readHomeQueueFragment() throws IOException {
@@ -2058,12 +2121,17 @@ public final class LunarLockerUiBundlePatcher {
     }
 
     static String transformChunkedCosmeticAppearanceIndex5(String source, String fragment) {
+        boolean hasAppearanceRoute = source.contains("title:\"Appearance\",children:");
         if (source.contains(CHUNKED_APPEARANCE_MARKER)
                 && source.contains("GomodCosmeticAppearanceSettings=GomodCosmeticAppearanceCreate(")
-                && source.contains("fitId:u&&u.id")) {
+                && hasAppearanceRoute
+                && Pattern.compile("fitId:([A-Za-z0-9_$]+)&&\\1\\.id").matcher(source).find()) {
             return source;
         }
-        if (source.contains("GomodCosmeticAppearanceSettings=")) {
+        boolean upgradingFragment = source.contains("GomodCosmeticAppearanceCreate=")
+                && source.contains("GomodCosmeticAppearanceSettings=GomodCosmeticAppearanceCreate(")
+                && hasAppearanceRoute;
+        if (source.contains("GomodCosmeticAppearanceSettings=") && !upgradingFragment) {
             throw new UnsupportedBundleException("partially patched chunked Cosmetic Appearance detected");
         }
 
@@ -2081,7 +2149,10 @@ public final class LunarLockerUiBundlePatcher {
             throw new UnsupportedBundleException("chunked Cosmetic Settings component signature was missing");
         }
         String compDecl = compMatcher.group(0);
-        String reactVar = compMatcher.group(2);
+        String cosmeticVar = compMatcher.group(3);
+        String reactVar = compMatcher.group(6);
+        String optionsVar = compMatcher.group(7);
+        String outfitVar = compMatcher.group(8);
         if (compMatcher.find()) {
             throw new UnsupportedBundleException("chunked Cosmetic Settings component signature was ambiguous");
         }
@@ -2110,16 +2181,30 @@ public final class LunarLockerUiBundlePatcher {
         String injectedDecl = "," + normalizedFragment
                 + ",GomodCosmeticAppearanceSettings=GomodCosmeticAppearanceCreate("
                 + reactVar + "," + jsxVar + "," + buttonVar + ",GomodLockerSlider)" + compDecl;
-        source = replaceUnique(source, compDecl, injectedDecl, "chunked Cosmetic Appearance component");
+        if (upgradingFragment) {
+            int existingStart = source.indexOf(",GomodCosmeticAppearanceCreate=");
+            int existingEnd = existingStart < 0 ? -1 : source.indexOf(compDecl, existingStart);
+            if (existingStart < 0 || existingEnd <= existingStart || existingEnd - existingStart > 32768) {
+                throw new UnsupportedBundleException("chunked Cosmetic Appearance upgrade boundaries changed");
+            }
+            source = source.substring(0, existingStart) + injectedDecl + source.substring(existingEnd + compDecl.length());
+        } else {
+            source = replaceUnique(source, compDecl, injectedDecl, "chunked Cosmetic Appearance component");
+        }
 
-        String replacementRoute = jsxVar + ".jsx(" + sectionVar
-                + ",{title:\"Appearance\",children:" + jsxVar
-                + ".jsx(GomodCosmeticAppearanceSettings,{cosmeticId:n.id,cosmeticName:n.name,cosmeticType:n.type,fitId:u&&u.id})}),"
-                + "o.length>0&&" + settingsAnchor;
-        source = replaceUnique(source, settingsAnchor, replacementRoute, "chunked Cosmetic Appearance route");
+        String fitIdExpr = "fitId:" + outfitVar + "&&" + outfitVar + ".id";
+        if (!hasAppearanceRoute) {
+            String replacementRoute = jsxVar + ".jsx(" + sectionVar
+                    + ",{title:\"Appearance\",children:" + jsxVar
+                    + ".jsx(GomodCosmeticAppearanceSettings,{cosmeticId:" + cosmeticVar
+                    + ".id,cosmeticName:" + cosmeticVar + ".name,cosmeticType:" + cosmeticVar
+                    + ".type," + fitIdExpr + "})}),"
+                    + optionsVar + ".length>0&&" + settingsAnchor;
+            source = replaceUnique(source, settingsAnchor, replacementRoute, "chunked Cosmetic Appearance route");
+        }
 
         if (!source.contains(CHUNKED_APPEARANCE_MARKER)
-                || !source.contains("fitId:u&&u.id")
+                || !source.contains(fitIdExpr)
                 || !source.contains("title:\"Appearance\"")) {
             throw new UnsupportedBundleException("chunked Cosmetic Appearance transform failed validation");
         }
@@ -2436,8 +2521,11 @@ public final class LunarLockerUiBundlePatcher {
                 && source.contains("GomodLockerItemContext=GomodBadgeStudio.GomodLockerItemContext");
         boolean hasFilter = source.contains("GomodUseBadgeFilter(")
                 && source.contains("GomodCustomBadgeImage,{badgeId:");
+        boolean isNametagBadges = source.contains("gui.nametag.badge");
         boolean hasTileStudio = source.contains("GomodLockerItemContext,{kind:\"badge\"")
-                && source.contains("GomodStudioLauncher,{kind:\"badge\"");
+                && (isNametagBadges
+                        ? !source.contains("GomodStudioLauncher,{kind:\"badge\"")
+                        : source.contains("GomodStudioLauncher,{kind:\"badge\""));
         if (hasHelpers && hasFilter && hasTileStudio) {
             return source;
         }
@@ -2468,7 +2556,7 @@ public final class LunarLockerUiBundlePatcher {
         if (!compMatcher.find()) {
             throw new UnsupportedBundleException("chunked badge studio react signature was missing");
         }
-        String reactVar = compMatcher.group(2);
+        String reactVar = compMatcher.group(6);
         if (compMatcher.find()) {
             throw new UnsupportedBundleException("chunked badge studio react signature was ambiguous");
         }
@@ -2544,6 +2632,7 @@ public final class LunarLockerUiBundlePatcher {
 
         String badgeInnerImgVar;
         Matcher imgMatcher = CHUNKED_BADGE_IMAGE_PATTERN.matcher(source);
+        Matcher styledImgMatcher = CHUNKED_BADGE_IMAGE_STYLED_PATTERN.matcher(source);
         if (imgMatcher.find()) {
             String imgOrig = imgMatcher.group(0);
             String outerComp = imgMatcher.group(1);
@@ -2566,6 +2655,29 @@ public final class LunarLockerUiBundlePatcher {
                         + ".ownedBadge.badge.animated,width:" + imgWidth + ",height:" + imgHeight + "})})}";
                 source = replaceUnique(source, imgOrig, imgReplacement, "chunked badge filter and image");
             }
+        } else if (styledImgMatcher.find()) {
+            String imgOrig = styledImgMatcher.group(0);
+            String outerComp = styledImgMatcher.group(1);
+            String imgParam = styledImgMatcher.group(2);
+            String bodyPrefix = styledImgMatcher.group(3);
+            String imgJsx = styledImgMatcher.group(4);
+            String wrapComp = styledImgMatcher.group(5);
+            badgeInnerImgVar = styledImgMatcher.group(6);
+            String imgWidth = styledImgMatcher.group(7);
+            String imgHeight = styledImgMatcher.group(8);
+            if (styledImgMatcher.find() || !jsxVar.equals(imgJsx)) {
+                throw new UnsupportedBundleException("chunked badge studio styled image component signature was ambiguous");
+            }
+            if (!hasFilter) {
+                String imgReplacement = outerComp + "=" + imgParam + "=>{" + bodyPrefix
+                        + "const gomodBadgeFilter=GomodUseBadgeFilter(" + imgParam + ".ownedBadge.badge.id);return "
+                        + imgJsx + ".jsx(" + wrapComp + ",{style:{filter:gomodBadgeFilter},children:"
+                        + imgJsx + ".jsx(GomodCustomBadgeImage,{badgeId:" + imgParam
+                        + ".ownedBadge.badge.id,resource:" + imgParam + ".ownedBadge.badge.resource,"
+                        + "alt:" + imgParam + ".ownedBadge.badge.name,animated:" + imgParam
+                        + ".ownedBadge.badge.animated,width:" + imgWidth + ",height:" + imgHeight + "})})}";
+                source = replaceUnique(source, imgOrig, imgReplacement, "chunked badge styled filter and image");
+            }
         } else if (hasFilter) {
             Matcher existingImgCall = Pattern.compile(
                     "GomodBadgeStudio=GomodBadgeStudioCreate\\([^;)]+,([A-Za-z0-9_$]+)\\)")
@@ -2580,39 +2692,75 @@ public final class LunarLockerUiBundlePatcher {
 
         if (!hasTileStudio) {
             Matcher tileMatcher = CHUNKED_BADGE_TILE_STUDIO_PATTERN.matcher(source);
-            if (!tileMatcher.find()) {
+            Matcher nametagTileMatcher = CHUNKED_BADGE_TILE_NAMETAG_PATTERN.matcher(source);
+            if (tileMatcher.find()) {
+                String tileOrig = tileMatcher.group(0);
+                String tilePrefix = tileMatcher.group(1);
+                String itemVar = tileMatcher.group(2);
+                String idxVar = tileMatcher.group(4);
+                String tileJsx = tileMatcher.group(5);
+                String tileComp = tileMatcher.group(6);
+                String equippedVar = tileMatcher.group(7);
+                String tileMidProps = tileMatcher.group(8);
+                String tileBridgeVar = tileMatcher.group(9);
+                String existingTopRight = tileMatcher.group(10);
+                String childrenProp = tileMatcher.group(11);
+                String keyExpr = tileMatcher.group(12);
+                if (tileMatcher.find() || !jsxVar.equals(tileJsx) || !bridgeVar.equals(tileBridgeVar)) {
+                    throw new UnsupportedBundleException("chunked badge studio tile signature was ambiguous");
+                }
+                String topRightProp = existingTopRight != null
+                        ? "topRight:" + tileJsx + ".jsxs(" + tileJsx + ".Fragment,{children:["
+                        + tileJsx + ".jsx(GomodCosmeticOwnershipBadge,{badgeId:" + itemVar + ".badge.id}),"
+                        + tileJsx + ".jsx(GomodStudioLauncher,{kind:\"badge\",item:" + itemVar + ".badge})]}),"
+                        : "topRight:" + tileJsx + ".jsx(GomodStudioLauncher,{kind:\"badge\",item:" + itemVar + ".badge}),";
+                String tileReplacement = tilePrefix
+                        + tileJsx + ".jsx(GomodLockerItemContext,{kind:\"badge\",id:" + itemVar + ".badge.id,"
+                        + "item:" + itemVar + ".badge,"
+                        + "equipped:(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id,"
+                        + "onEquip:()=>{(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id?"
+                        + tileBridgeVar + ".badges.equip(-1):" + tileBridgeVar + ".badges.equip(" + itemVar + ".badge.id)},"
+                        + "children:" + tileJsx + ".jsx(" + tileComp + ",{className:" + idxVar + "==0?\"badgesTour2\":void 0,"
+                        + "name:" + itemVar + ".badge.name,equipped:(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id,"
+                        + tileMidProps + topRightProp + childrenProp + ")}," + keyExpr + "):null";
+                source = replaceUnique(source, tileOrig, tileReplacement, "chunked badge studio tile controls");
+            } else if (nametagTileMatcher.find()) {
+                String tileOrig = nametagTileMatcher.group(0);
+                String tileFn = nametagTileMatcher.group(1);
+                String itemVar = nametagTileMatcher.group(2);
+                String lockedVar = nametagTileMatcher.group(3);
+                String equippedVar = nametagTileMatcher.group(4);
+                String onSelectVar = nametagTileMatcher.group(5);
+                String tileJsx = nametagTileMatcher.group(6);
+                String tileComp = nametagTileMatcher.group(7);
+                String tooltipComp = nametagTileMatcher.group(8);
+                String badgeImgCall = nametagTileMatcher.group(9);
+                if (nametagTileMatcher.find() || !jsxVar.equals(tileJsx)) {
+                    throw new UnsupportedBundleException("chunked badge studio nametag tile signature was ambiguous");
+                }
+                String wrappedChildren = tileJsx + ".jsxs(\"div\",{style:{position:\"relative\",width:\"100%\",height:\"100%\"},children:["
+                        + badgeImgCall + ","
+                        + tileJsx + ".jsx(\"div\",{style:{position:\"absolute\",top:\"2px\",right:\"2px\",zIndex:20,"
+                        + "display:\"flex\",alignItems:\"center\"},children:"
+                        + tileJsx + ".jsx(GomodCosmeticOwnershipBadge,{badgeId:" + itemVar + ".badge.id})})]})";
+                String tileReplacement = tileFn + "=({ownedBadge:" + itemVar + ",locked:" + lockedVar
+                        + ",equipped:" + equippedVar + ",onSelect:" + onSelectVar + "})=>"
+                        + tileJsx + ".jsx(GomodLockerItemContext,{kind:\"badge\",id:" + itemVar + ".badge.id,item:"
+                        + itemVar + ".badge,equipped:" + equippedVar + ",onEquip:()=>{" + equippedVar + "?"
+                        + bridgeVar + ".badges.equip(-1):" + onSelectVar + "(" + itemVar + ".badge.id)},children:"
+                        + tileJsx + ".jsx(" + tileComp + ",{label:" + itemVar + ".badge.name,size:\"lg\",tooltip:"
+                        + tileJsx + ".jsx(" + tooltipComp + ",{ownedBadge:" + itemVar + ",locked:" + lockedVar + "}),"
+                        + "selected:" + equippedVar + ",locked:" + lockedVar + ",onSelect:()=>" + onSelectVar
+                        + "(" + itemVar + ".badge.id),children:" + wrappedChildren + "})})";
+                source = replaceUnique(source, tileOrig, tileReplacement, "chunked badge studio nametag tile controls");
+            } else if (isNametagBadges && source.contains("GomodLockerItemContext,{kind:\"badge\"")
+                    && source.contains("GomodStudioLauncher,{kind:\"badge\"")) {
+                source = source.replaceAll(
+                        "," + Pattern.quote(jsxVar) + "\\.jsx\\(GomodStudioLauncher,\\{kind:\"badge\",item:[A-Za-z0-9_$]+\\.badge\\}\\)",
+                        "");
+            } else {
                 throw new UnsupportedBundleException("chunked badge studio tile signature was missing");
             }
-            String tileOrig = tileMatcher.group(0);
-            String tilePrefix = tileMatcher.group(1);
-            String itemVar = tileMatcher.group(2);
-            String idxVar = tileMatcher.group(4);
-            String tileJsx = tileMatcher.group(5);
-            String tileComp = tileMatcher.group(6);
-            String equippedVar = tileMatcher.group(7);
-            String tileMidProps = tileMatcher.group(8);
-            String tileBridgeVar = tileMatcher.group(9);
-            String existingTopRight = tileMatcher.group(10);
-            String childrenProp = tileMatcher.group(11);
-            String keyExpr = tileMatcher.group(12);
-            if (tileMatcher.find() || !jsxVar.equals(tileJsx) || !bridgeVar.equals(tileBridgeVar)) {
-                throw new UnsupportedBundleException("chunked badge studio tile signature was ambiguous");
-            }
-            String topRightProp = existingTopRight != null
-                    ? "topRight:" + tileJsx + ".jsxs(" + tileJsx + ".Fragment,{children:["
-                    + tileJsx + ".jsx(GomodCosmeticOwnershipBadge,{badgeId:" + itemVar + ".badge.id}),"
-                    + tileJsx + ".jsx(GomodStudioLauncher,{kind:\"badge\",item:" + itemVar + ".badge})]}),"
-                    : "topRight:" + tileJsx + ".jsx(GomodStudioLauncher,{kind:\"badge\",item:" + itemVar + ".badge}),";
-            String tileReplacement = tilePrefix
-                    + tileJsx + ".jsx(GomodLockerItemContext,{kind:\"badge\",id:" + itemVar + ".badge.id,"
-                    + "item:" + itemVar + ".badge,"
-                    + "equipped:(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id,"
-                    + "onEquip:()=>{(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id?"
-                    + tileBridgeVar + ".badges.equip(-1):" + tileBridgeVar + ".badges.equip(" + itemVar + ".badge.id)},"
-                    + "children:" + tileJsx + ".jsx(" + tileComp + ",{className:" + idxVar + "==0?\"badgesTour2\":void 0,"
-                    + "name:" + itemVar + ".badge.name,equipped:(" + equippedVar + "==null?void 0:" + equippedVar + ".id)==" + itemVar + ".badge.id,"
-                    + tileMidProps + topRightProp + childrenProp + ")}," + keyExpr + "):null";
-            source = replaceUnique(source, tileOrig, tileReplacement, "chunked badge studio tile controls");
         }
 
         if (!source.contains("from\"./color-picker-option.js\";")) {
@@ -2657,7 +2805,7 @@ public final class LunarLockerUiBundlePatcher {
                 || !source.contains("GomodUseBadgeFilter(")
                 || !source.contains("GomodCustomBadgeImage,{badgeId:")
                 || !source.contains("GomodLockerItemContext,{kind:\"badge\"")
-                || !source.contains("GomodStudioLauncher,{kind:\"badge\"")) {
+                || (!isNametagBadges && !source.contains("GomodStudioLauncher,{kind:\"badge\""))) {
             throw new UnsupportedBundleException("chunked badge studio transform failed validation");
         }
         return source;
@@ -2983,6 +3131,174 @@ public final class LunarLockerUiBundlePatcher {
                 || !source.contains("GomodFitShareButton,{fit:")
                 || !source.contains("GomodFitShareDialog,{fit:")) {
             throw new UnsupportedBundleException("chunked fits actions transform failed validation");
+        }
+        return source;
+    }
+
+    /** Wires gomod's custom HSV Logo Color picker into Lunar's new Nametag -> Logo Color section. */
+    static String transformChunkedNametagLogoColorIndex5(String source, String nametagLogoColorFragment) {
+        if (!source.contains("gui.nametag.logoColor")) {
+            return source;
+        }
+        boolean hasHelpers = source.contains(CHUNKED_NAMETAG_LOGO_COLOR_MARKER)
+                && source.contains("GomodNametagLogoColorSection=GomodNametagLogoColor.GomodNametagLogoColorSection")
+                && source.contains("GomodUseNametagLogoColor=GomodNametagLogoColor.GomodUseNametagLogoColor");
+        boolean hasSection = source.contains("GomodNametagLogoColorSection,{searchText:");
+        boolean hasPreview = source.contains("GomodUseNametagLogoColor(");
+        boolean hasNoPlusOption = source.contains("label:\"None\",selected:0===");
+        boolean hasExpandedBadges = source.contains(CHUNKED_NAMETAG_ROOT_STYLE_SCROLL)
+                && !CHUNKED_NAMETAG_BADGES_SCROLL_PATTERN.matcher(source).find();
+        if (hasHelpers && hasSection && hasPreview && hasNoPlusOption && hasExpandedBadges) {
+            return source;
+        }
+
+        Matcher finishMatcher = CHUNKED_INDEX5_FINISH_BUTTON_PATTERN.matcher(source);
+        if (!finishMatcher.find()) {
+            throw new UnsupportedBundleException("chunked nametag logo color button signature was missing");
+        }
+        String jsxVar = finishMatcher.group(1);
+        String buttonVar = finishMatcher.group(2);
+        if (finishMatcher.find()) {
+            throw new UnsupportedBundleException("chunked nametag logo color button signature was ambiguous");
+        }
+
+        Matcher compMatcher = CHUNKED_INDEX5_SETTINGS_COMPONENT_PATTERN.matcher(source);
+        if (!compMatcher.find()) {
+            throw new UnsupportedBundleException("chunked nametag logo color react signature was missing");
+        }
+        String reactVar = compMatcher.group(6);
+        if (compMatcher.find()) {
+            throw new UnsupportedBundleException("chunked nametag logo color react signature was ambiguous");
+        }
+
+        if (!hasSection) {
+            Matcher emptyMatcher = CHUNKED_NAMETAG_LOGO_EMPTY_PATTERN.matcher(source);
+            if (!emptyMatcher.find()) {
+                throw new UnsupportedBundleException("chunked nametag noLogoColors signature was missing");
+            }
+            String emptyOrig = emptyMatcher.group(0);
+            String emptyJsx = emptyMatcher.group(2);
+            int emptyStart = emptyMatcher.start();
+            if (emptyMatcher.find() || !jsxVar.equals(emptyJsx)) {
+                throw new UnsupportedBundleException("chunked nametag noLogoColors signature was ambiguous");
+            }
+            int lookbackStart = Math.max(0, emptyStart - 600);
+            String prefixWindow = source.substring(lookbackStart, emptyStart);
+            Matcher searchParamMatcher = Pattern.compile("\\(\\{searchText:([A-Za-z0-9_$]+)\\}\\)=>").matcher(prefixWindow);
+            String searchParam = null;
+            while (searchParamMatcher.find()) {
+                searchParam = searchParamMatcher.group(1);
+            }
+            if (searchParam == null) {
+                throw new UnsupportedBundleException("chunked nametag logo color searchText parameter was missing");
+            }
+            String sectionReplacement = jsxVar + ".jsx(GomodNametagLogoColorSection,{searchText:" + searchParam
+                    + ",fallback:" + emptyOrig + "})";
+            source = replaceUnique(source, emptyOrig, sectionReplacement, "chunked nametag logo color section");
+        }
+
+        if (!hasPreview) {
+            Matcher previewMatcher = CHUNKED_NAMETAG_PREVIEW_LOGO_PATTERN.matcher(source);
+            if (previewMatcher.find()) {
+                String previewOrig = previewMatcher.group(0);
+                String dataVar = previewMatcher.group(1);
+                if (!previewMatcher.find()) {
+                    String previewReplacement = "logoColor:GomodUseNametagLogoColor("
+                            + dataVar + "==null?void 0:" + dataVar + ".lunarPlus.logoColor),plusColor:";
+                    source = replaceUnique(source, previewOrig, previewReplacement, "chunked nametag preview logo color");
+                }
+            }
+        }
+
+        if (!hasNoPlusOption) {
+            Matcher iconMatcher = CHUNKED_ICON_RENDER_PATTERN.matcher(source);
+            Matcher gridMatcher = CHUNKED_NAMETAG_PLUS_COLORS_GRID_PATTERN.matcher(source);
+            if (iconMatcher.find() && gridMatcher.find()) {
+                String renderIconVar = iconMatcher.group(1);
+                String iconEnumVar = iconMatcher.group(2);
+                String gridOrig = gridMatcher.group(0);
+                String gridFn = gridMatcher.group(1);
+                String slotsArg = gridMatcher.group(2);
+                String activeArg = gridMatcher.group(3);
+                String msgArg = gridMatcher.group(4);
+                String selectFn = gridMatcher.group(5);
+                String colorArg = gridMatcher.group(6);
+                String bridgeVar = gridMatcher.group(7);
+                String gridJsx = gridMatcher.group(8);
+                String gridWrap = gridMatcher.group(9);
+                String itemVar = gridMatcher.group(10);
+                String hiddenVar = gridMatcher.group(11);
+                String tileComp = gridMatcher.group(12);
+                String swatchComp = gridMatcher.group(13);
+                String toHexFn = gridMatcher.group(14);
+                if (!gridMatcher.find() && jsxVar.equals(gridJsx)) {
+                    String banIcon = renderIconVar + "(" + iconEnumVar + ".PI_BAN_LEFT_STROKE,{width:\"18px\",height:\"18px\"})";
+                    String noneTile = "!" + slotsArg + ".some(gomodSlot=>gomodSlot.item&&gomodSlot.item.color===0)&&"
+                            + gridJsx + ".jsx(" + tileComp + ",{label:\"None\",selected:0===" + activeArg
+                            + ",onSelect:()=>" + selectFn + "(0),children:" + banIcon + "},\"GOMOD_NO_PLUS\")";
+                    String mappedTiles = "..." + slotsArg + ".map(({item:" + itemVar + ",hidden:" + hiddenVar + "})=>"
+                            + gridJsx + ".jsx(" + tileComp + ",{label:" + itemVar + ".color===0?\"None\":" + itemVar
+                            + ".name,selected:" + itemVar + ".color===" + activeArg + ",hidden:" + hiddenVar
+                            + ",onSelect:()=>" + selectFn + "(" + itemVar + ".color),children:" + itemVar
+                            + ".color===0?" + banIcon + ":" + gridJsx + ".jsx(" + swatchComp + ",{color:"
+                            + toHexFn + "(" + itemVar + ".color)})}," + itemVar + ".color))";
+                    String gridReplacement = gridFn + "=({slots:" + slotsArg + ",active:" + activeArg
+                            + ",message:" + msgArg + "})=>{const " + selectFn + "=" + colorArg + "=>{"
+                            + colorArg + "!==" + activeArg + "&&" + bridgeVar + ".lunarPlus.setColor(" + colorArg + ")};"
+                            + "return " + gridJsx + ".jsx(" + gridWrap + ",{message:" + msgArg + ",children:["
+                            + noneTile + "," + mappedTiles + "]})}";
+                    source = replaceUnique(source, gridOrig, gridReplacement, "chunked nametag Lunar+ None option");
+                }
+            }
+        }
+
+        if (!hasExpandedBadges) {
+            if (!source.contains(CHUNKED_NAMETAG_ROOT_STYLE_SCROLL)
+                    && source.contains(CHUNKED_NAMETAG_ROOT_STYLE_ANCHOR)) {
+                source = replaceUnique(source, CHUNKED_NAMETAG_ROOT_STYLE_ANCHOR, CHUNKED_NAMETAG_ROOT_STYLE_SCROLL,
+                        "chunked nametag root scroll");
+            }
+            Matcher badgesScrollMatcher = CHUNKED_NAMETAG_BADGES_SCROLL_PATTERN.matcher(source);
+            if (badgesScrollMatcher.find()) {
+                String badgesOrig = badgesScrollMatcher.group(0);
+                String tFn = badgesScrollMatcher.group(1);
+                String countExpr = badgesScrollMatcher.group(2);
+                if (!badgesScrollMatcher.find()) {
+                    String badgesReplacement = "className:\"nametagTour4\",title:" + tFn
+                            + "(\"gui.nametag.badge\"),count:" + countExpr + ",scrollable:!1,";
+                    source = replaceUnique(source, badgesOrig, badgesReplacement, "chunked nametag badges full display");
+                }
+            }
+        }
+
+        if (!hasHelpers) {
+            String normalized = nametagLogoColorFragment.trim();
+            while (normalized.endsWith(",")) {
+                normalized = normalized.substring(0, normalized.length() - 1).trim();
+            }
+            String decl = "const " + normalized
+                    + ",GomodNametagLogoColor=GomodNametagLogoColorCreate("
+                    + reactVar + "," + jsxVar + "," + buttonVar + "),"
+                    + "GomodNametagLogoColorSection=GomodNametagLogoColor.GomodNametagLogoColorSection,"
+                    + "GomodUseNametagLogoColor=GomodNametagLogoColor.GomodUseNametagLogoColor;";
+            String oldStart = "const GomodNametagLogoColorCreate=";
+            String oldEnd = "GomodUseNametagLogoColor=GomodNametagLogoColor.GomodUseNametagLogoColor;";
+            int existingStart = source.indexOf(oldStart);
+            int existingEnd = existingStart < 0 ? -1 : source.indexOf(oldEnd, existingStart);
+            if (existingStart >= 0 && existingEnd > existingStart) {
+                source = source.substring(0, existingStart) + decl
+                        + source.substring(existingEnd + oldEnd.length());
+            } else if (source.contains(";export{")) {
+                source = replaceUnique(source, ";export{", ";" + decl + "export{",
+                        "chunked nametag logo color export anchor");
+            } else {
+                source = source + "\n" + decl;
+            }
+        }
+
+        if (!source.contains(CHUNKED_NAMETAG_LOGO_COLOR_MARKER)
+                || !source.contains("GomodNametagLogoColorSection,{searchText:")) {
+            throw new UnsupportedBundleException("chunked nametag logo color transform failed validation");
         }
         return source;
     }

@@ -1,199 +1,109 @@
 package me.napim.gomod.features;
 
-
-
 import com.google.gson.JsonObject;
-
 import me.napim.gomod.GomodVersion;
-
 import me.napim.gomod.Main;
-
 import net.minecraft.event.ClickEvent;
-
 import net.minecraft.event.HoverEvent;
-
 import net.minecraft.util.ChatComponentText;
-
 import net.minecraft.util.ChatStyle;
-
 import net.minecraft.util.EnumChatFormatting;
 
-
-
 /**
-
- * Notifies once per session when the relay reports a newer gomod version (first time in a world/lobby).
-
+ * Coordinates in-game update notifications with {@link GomodAutoUpdater}.
+ * Checks GitHub Releases on first world entry and also merges relay {@code modRelease} updates.
  */
-
 public final class GomodUpdateChecker {
 
-    /** gomod changelog channel (overridden by relay {@code modRelease.changelogUrl} when set). */
-
-    private static final String DEFAULT_CHANGELOG_URL =
-
-            "https://discord.com/channels/1254469815918133318/1506276042980065410";
-
-
-
     private static volatile boolean enteredWorldThisSession;
-
-    private static volatile String pendingLatestVersion = "";
-
-    private static volatile String pendingDownloadUrl = "";
-
-    private static volatile String pendingChangelogUrl = "";
-
-
+    private static volatile String notifiedVersionThisSession = "";
 
     private GomodUpdateChecker() {}
 
-
-
     public static void onPollResponse(JsonObject root) {
-
         if (root == null || !root.has("modRelease") || !root.get("modRelease").isJsonObject()) {
-
             return;
-
         }
-
-        JsonObject rel = root.getAsJsonObject("modRelease");
-
-        String latest = rel.has("version") && !rel.get("version").isJsonNull()
-
-                ? rel.get("version").getAsString().trim() : "";
-
-        if (latest.isEmpty()) {
-
-            return;
-
-        }
-
-        pendingLatestVersion = latest;
-
-        pendingDownloadUrl = jsonString(rel, "downloadUrl");
-
-        pendingChangelogUrl = jsonString(rel, "changelogUrl");
-
-        if (enteredWorldThisSession) {
-
-            tryNotifyInWorld();
-
-        }
-
+        GomodAutoUpdater.onRelayRelease(root.getAsJsonObject("modRelease"));
     }
-
-
 
     /** Call when {@code thePlayer} becomes non-null for the first time this session. */
-
     public static void onFirstWorldEntry() {
-
         if (enteredWorldThisSession) {
-
             return;
-
         }
-
         enteredWorldThisSession = true;
-
+        GomodAutoUpdater.checkForUpdatesAsync(false, true);
         tryNotifyInWorld();
-
     }
 
-
-
-    private static void tryNotifyInWorld() {
-
-        String latest = pendingLatestVersion;
-
-        if (latest.isEmpty() || !GomodVersion.isOlderThan(latest)) {
-
-            return;
-
+    /** Dismisses the chat notification for the current latest version. */
+    public static void dismissCurrentUpdate() {
+        GomodAutoUpdater.ReleaseInfo info = GomodAutoUpdater.getLatestRelease();
+        if (info != null && !info.version.isEmpty()) {
+            ConfigManager.setLastNotifiedModVersion(info.version);
+            notifiedVersionThisSession = info.version;
+            Main.sendMessage(Main.CHAT_PREFIX + EnumChatFormatting.GRAY
+                    + "Dismissed update notice for " + EnumChatFormatting.WHITE + info.version
+                    + EnumChatFormatting.GRAY + ". Run " + EnumChatFormatting.YELLOW + "/gomod update"
+                    + EnumChatFormatting.GRAY + " anytime to update.");
         }
+    }
 
-        if (latest.equals(ConfigManager.getLastNotifiedModVersion())) {
-
+    public static void tryNotifyInWorld() {
+        if (!enteredWorldThisSession || !GomodAutoUpdater.hasCompletedInitialGitHubCheck()) {
             return;
-
         }
-
-        ConfigManager.setLastNotifiedModVersion(latest);
+        GomodAutoUpdater.ReleaseInfo info = GomodAutoUpdater.getLatestRelease();
+        if (info == null || info.version.isEmpty() || !GomodVersion.isOlderThan(info.version)) {
+            return;
+        }
+        if (GomodAutoUpdater.isStagedForExit()) {
+            return;
+        }
+        String latest = info.version;
+        if (latest.equals(notifiedVersionThisSession) || latest.equals(ConfigManager.getLastNotifiedModVersion())) {
+            return;
+        }
+        notifiedVersionThisSession = latest;
 
         String installed = GomodVersion.get();
-
         ChatComponentText line = new ChatComponentText(Main.CHAT_PREFIX + EnumChatFormatting.GOLD
-
-                + "gomod update available: " + EnumChatFormatting.WHITE + installed
-
+                + "Update available: " + EnumChatFormatting.WHITE + installed
                 + EnumChatFormatting.GRAY + " \u2192 " + EnumChatFormatting.GREEN + latest);
 
+        appendCommandLink(line, EnumChatFormatting.GREEN + "" + EnumChatFormatting.BOLD + " [Update]",
+                "/gomod update",
+                "Open the gomod updater to install " + latest + " (" + GomodAutoUpdater.getLoaderDisplayName() + ")");
 
+        appendUrlLink(line, EnumChatFormatting.AQUA + " [Changelog]",
+                info.effectiveChangelogUrl(),
+                "Open release notes for " + latest);
 
-        String download = pendingDownloadUrl;
-
-        if (download != null && !download.isEmpty()) {
-
-            appendUrlLink(line, EnumChatFormatting.AQUA + " [Download]", download, "Download the new gomod JAR");
-
-        }
-
-
-
-        String changelog = pendingChangelogUrl;
-
-        if (changelog == null || changelog.isEmpty()) {
-
-            changelog = DEFAULT_CHANGELOG_URL;
-
-        }
-
-        appendUrlLink(line, EnumChatFormatting.LIGHT_PURPLE + " [Changelog]", changelog,
-
-                "Open the gomod changelog channel on Discord");
-
-
+        appendCommandLink(line, EnumChatFormatting.GRAY + " [Later]",
+                "/gomod update dismiss",
+                "Hide this reminder for " + latest);
 
         Main.sendChatMessage(line);
-
     }
 
-
+    private static void appendCommandLink(ChatComponentText parent, String label, String command, String hover) {
+        ChatComponentText link = new ChatComponentText(label);
+        ChatStyle st = new ChatStyle();
+        st.setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command));
+        st.setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ChatComponentText(EnumChatFormatting.GRAY + hover)));
+        link.setChatStyle(st);
+        parent.appendSibling(link);
+    }
 
     private static void appendUrlLink(ChatComponentText parent, String label, String url, String hover) {
-
         ChatComponentText link = new ChatComponentText(label);
-
         ChatStyle st = new ChatStyle();
-
         st.setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
-
         st.setChatHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-
                 new ChatComponentText(EnumChatFormatting.GRAY + hover)));
-
         link.setChatStyle(st);
-
         parent.appendSibling(link);
-
     }
-
-
-
-    private static String jsonString(JsonObject o, String key) {
-
-        if (o == null || !o.has(key) || o.get(key).isJsonNull()) {
-
-            return "";
-
-        }
-
-        return o.get(key).getAsString().trim();
-
-    }
-
 }
-
-

@@ -81,6 +81,10 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download Forge JAR
         uses: actions/download-artifact@v4
         with:
@@ -93,8 +97,22 @@ jobs:
           name: gomod123-lunar
           path: release-assets
 
+      - name: Extract tag release notes
+        id: notes
+        shell: bash
+        run: |
+          BODY="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+          if [ -n "${BODY}" ]; then
+            printf '%s\n' "${BODY}" > release-notes.md
+            echo "has_notes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_notes=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: gomod123 ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.has_notes == 'true' && 'release-notes.md' || '' }}
+          generate_release_notes: ${{ steps.notes.outputs.has_notes != 'true' }}
           files: release-assets/*.jar

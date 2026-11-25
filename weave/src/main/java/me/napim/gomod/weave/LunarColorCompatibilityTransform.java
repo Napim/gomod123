@@ -78,7 +78,7 @@ public final class LunarColorCompatibilityTransform {
                     List<MethodInsnNode> setters = setters(method);
                     Set<String> signatures = new HashSet<String>();
                     for (MethodInsnNode setter : setters) signatures.add(setter.owner + "." + setter.name);
-                    if (setters.size() != 3 || signatures.size() != 1) continue;
+                    if (setters.size() < 3 || signatures.size() != 1) continue;
                     for (MethodInsnNode setter : setters) {
                         method.instructions.insertBefore(setter, new LdcInsnNode(setter.name));
                         method.instructions.set(setter, call("me/napim/gomod/mixins/LunarLockerStateBridge", "publish",
@@ -193,7 +193,7 @@ public final class LunarColorCompatibilityTransform {
         Set<String> keys = new HashSet<String>();
         for (AbstractInsnNode instruction : method.instructions) if (instruction instanceof LdcInsnNode
                 && ((LdcInsnNode) instruction).cst instanceof String) keys.add((String) ((LdcInsnNode) instruction).cst);
-        return keys.containsAll(Arrays.asList("availableColors", "active", "lunarPlus", "originalLunarPlus", "plusColor"));
+        return keys.containsAll(Arrays.asList("availableColors", "active", "lunarPlus", "plusColor"));
     }
     private static List<MethodInsnNode> setters(MethodNode method) {
         List<MethodInsnNode> found = new ArrayList<MethodInsnNode>();

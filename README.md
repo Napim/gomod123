@@ -8,7 +8,7 @@
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.8.9-4CAF50?style=flat-square&logo=minecraft&logoColor=white)](https://www.minecraft.net/)
 [![Loaders](https://img.shields.io/badge/Loaders-Forge%20%7C%20Weave-2196F3?style=flat-square)](https://github.com/Napim/gomod123/releases)
-[![Release](https://img.shields.io/badge/Download-v1.0.0-8BC34A?style=flat-square&logo=github)](https://github.com/Napim/gomod123/releases/latest)
+[![Release](https://img.shields.io/github/v/release/Napim/gomod123?label=Download&color=8BC34A&style=flat-square&logo=github)](https://github.com/Napim/gomod123/releases/latest)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/nqcZyyWusP)
 
 **[Download Latest Release](https://github.com/Napim/gomod123/releases/latest)** • **[Join Discord](https://discord.gg/nqcZyyWusP)** • [Preview](#preview) • [Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [FAQ](#faq)

@@ -1,6 +1,5 @@
 package me.napim.gomod.gui;
 
-import me.napim.gomod.Main;
 import me.napim.gomod.features.ChestRouteManager;
 import me.napim.gomod.features.ConfigManager;
 import me.napim.gomod.features.GomodKeybinds;
@@ -11,7 +10,7 @@ import net.minecraft.util.EnumChatFormatting;
 import org.lwjgl.input.Keyboard;
 
 /**
- * Chest routes settings: render toggle, feet-place keybind, and undo shortcut.
+ * Chest routes settings: render toggle and editor/view keybinds.
  */
 public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboardCaptureGuard {
 
@@ -22,18 +21,20 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
     private static final int RIGHT_COLUMN_OFFSET = 80;
     private static final int MARGIN_ABOVE_BACK = 12;
 
+    private static final int AWAIT_NONE = 0;
+    private static final int AWAIT_FEET = 1;
+    private static final int AWAIT_TOGGLE_RENDER = 2;
+    private static final int AWAIT_UNDO = 3;
+
     private final ChestRoutesMapsGUI parent;
     private GuiButton renderButton;
     private GuiButton feetKeyButton;
     private GuiButton toggleRenderKeyButton;
     private GuiButton undoKeyButton;
-    private GuiButton undoButton;
     private GuiButton backButton;
     private int labelX;
     private int rowStartY;
-    private boolean awaitingFeetKey;
-    private boolean awaitingToggleRenderKey;
-    private boolean awaitingUndoKey;
+    private int awaitingKeyTarget = AWAIT_NONE;
 
     public ChestRoutesSettingsGUI(ChestRoutesMapsGUI parent) {
         this.parent = parent;
@@ -47,7 +48,7 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
         int sh = sr.getScaledHeight();
         int backY = GuiHeader.backButtonY(sh, BUTTON_HEIGHT);
         int titleBottom = GuiHeader.standardContentTopAfterSubtitle(fontRendererObj);
-        int stackH = 5 * ROW;
+        int stackH = 4 * ROW;
         rowStartY = titleBottom + Math.max(8, (backY - MARGIN_ABOVE_BACK - titleBottom - stackH) / 2);
         labelX = cx - LABEL_COLUMN_OFFSET;
         int rightX = cx + RIGHT_COLUMN_OFFSET;
@@ -57,17 +58,15 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
         toggleRenderKeyButton = new GuiButton(4, rightX, rowStartY + ROW * 2, BTN_W, BUTTON_HEIGHT,
                 getToggleRenderKeyButtonText());
         undoKeyButton = new GuiButton(5, rightX, rowStartY + ROW * 3, BTN_W, BUTTON_HEIGHT, getUndoKeyButtonText());
-        undoButton = new GuiButton(3, rightX, rowStartY + ROW * 4, BTN_W, BUTTON_HEIGHT,
-                EnumChatFormatting.YELLOW + "Undo");
-        backButton = new GuiButton(0, cx - 100, backY, 200, BUTTON_HEIGHT, EnumChatFormatting.GRAY + "Back");
+        backButton = new GuiButton(0, cx - 75, backY, 150, BUTTON_HEIGHT, EnumChatFormatting.GRAY + "Back");
 
         buttonList.clear();
         buttonList.add(renderButton);
         buttonList.add(feetKeyButton);
         buttonList.add(toggleRenderKeyButton);
         buttonList.add(undoKeyButton);
-        buttonList.add(undoButton);
         buttonList.add(backButton);
+        refreshKeyButtonLabels();
     }
 
     @Override
@@ -77,7 +76,7 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
         ScaledResolution sr = new ScaledResolution(mc);
         String title = EnumChatFormatting.AQUA + "" + EnumChatFormatting.BOLD + "Chest Routes Settings";
         GuiHeader.drawTitleCenteredWithShadow(fontRendererObj, title, sr.getScaledWidth(), GuiHeader.STANDARD_TITLE_Y, 0xFFFFFF);
-        String sub = EnumChatFormatting.GRAY + "Rendering, keybinds, and draft undo";
+        String sub = EnumChatFormatting.GRAY + "Rendering and keybinds";
         GuiHeader.drawTitleCenteredWithShadow(fontRendererObj, sub, sr.getScaledWidth(), GuiHeader.STANDARD_SUBTITLE_Y,
                 0xAAAAAA);
 
@@ -85,7 +84,6 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
         drawRowLabel("Place checkpoint at feet", rowStartY + ROW);
         drawRowLabel("Toggle routes view", rowStartY + ROW * 2);
         drawRowLabel("Undo draft key", rowStartY + ROW * 3);
-        drawRowLabel("Undo last draft", rowStartY + ROW * 4);
 
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -94,81 +92,81 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
         fontRendererObj.drawString(text, labelX, rowY + 6, 0xFFFFFF);
     }
 
+    private void refreshKeyButtonLabels() {
+        if (feetKeyButton != null) {
+            feetKeyButton.displayString = (awaitingKeyTarget == AWAIT_FEET)
+                    ? EnumChatFormatting.WHITE + "Press a key..."
+                    : getFeetKeyButtonText();
+        }
+        if (toggleRenderKeyButton != null) {
+            toggleRenderKeyButton.displayString = (awaitingKeyTarget == AWAIT_TOGGLE_RENDER)
+                    ? EnumChatFormatting.WHITE + "Press a key..."
+                    : getToggleRenderKeyButtonText();
+        }
+        if (undoKeyButton != null) {
+            undoKeyButton.displayString = (awaitingKeyTarget == AWAIT_UNDO)
+                    ? EnumChatFormatting.WHITE + "Press a key..."
+                    : getUndoKeyButtonText();
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws java.io.IOException {
+        if (mouseButton == 1 && awaitingKeyTarget != AWAIT_NONE) {
+            awaitingKeyTarget = AWAIT_NONE;
+            refreshKeyButtonLabels();
+            return;
+        }
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+    }
+
     @Override
     public void actionPerformed(GuiButton button) {
         if (button.id == 0) {
-            awaitingFeetKey = false;
-            awaitingToggleRenderKey = false;
-            awaitingUndoKey = false;
+            awaitingKeyTarget = AWAIT_NONE;
             parent.refreshFromDisk();
             mc.displayGuiScreen(parent);
             return;
         }
         if (button.id == 1) {
+            awaitingKeyTarget = AWAIT_NONE;
+            refreshKeyButtonLabels();
             ConfigManager.setChestRoutesRenderEnabled(!ConfigManager.isChestRoutesRenderEnabled());
             renderButton.displayString = getRenderButtonText();
             ChestRouteManager.reloadStorageAndRefreshGlow();
             return;
         }
         if (button.id == 2) {
-            awaitingFeetKey = true;
-            feetKeyButton.displayString = EnumChatFormatting.YELLOW + "Press a key...";
-            return;
-        }
-        if (button.id == 3) {
-            String err = ChestRouteManager.undoDraft();
-            if (err != null) {
-                Main.sendMessage(Main.CHAT_PREFIX + EnumChatFormatting.RED + err);
-            } else {
-                Main.sendMessage(Main.CHAT_PREFIX + EnumChatFormatting.GREEN + "Undid last draft edit.");
-            }
+            awaitingKeyTarget = (awaitingKeyTarget == AWAIT_FEET) ? AWAIT_NONE : AWAIT_FEET;
+            refreshKeyButtonLabels();
             return;
         }
         if (button.id == 4) {
-            awaitingToggleRenderKey = true;
-            toggleRenderKeyButton.displayString = EnumChatFormatting.YELLOW + "Press a key...";
+            awaitingKeyTarget = (awaitingKeyTarget == AWAIT_TOGGLE_RENDER) ? AWAIT_NONE : AWAIT_TOGGLE_RENDER;
+            refreshKeyButtonLabels();
             return;
         }
         if (button.id == 5) {
-            awaitingUndoKey = true;
-            undoKeyButton.displayString = EnumChatFormatting.YELLOW + "Press a key...";
-            return;
+            awaitingKeyTarget = (awaitingKeyTarget == AWAIT_UNDO) ? AWAIT_NONE : AWAIT_UNDO;
+            refreshKeyButtonLabels();
         }
     }
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws java.io.IOException {
-        if (awaitingToggleRenderKey) {
-            awaitingToggleRenderKey = false;
-            if (keyCode == Keyboard.KEY_ESCAPE) {
-                ConfigManager.setChestRoutesToggleKeyCode(0);
-            } else {
-                ConfigManager.setChestRoutesToggleKeyCode(keyCode);
+        if (awaitingKeyTarget != AWAIT_NONE) {
+            int target = awaitingKeyTarget;
+            awaitingKeyTarget = AWAIT_NONE;
+            int bound = (keyCode == Keyboard.KEY_ESCAPE) ? 0 : keyCode;
+            if (target == AWAIT_FEET) {
+                ConfigManager.setChestRoutesPlaceFeetKeyCode(bound);
+            } else if (target == AWAIT_TOGGLE_RENDER) {
+                ConfigManager.setChestRoutesToggleKeyCode(bound);
+            } else if (target == AWAIT_UNDO) {
+                ConfigManager.setChestRoutesUndoKeyCode(bound);
             }
-            toggleRenderKeyButton.displayString = getToggleRenderKeyButtonText();
             GomodKeybinds.applyConfigBindings();
-            return;
-        }
-        if (awaitingUndoKey) {
-            awaitingUndoKey = false;
-            if (keyCode == Keyboard.KEY_ESCAPE) {
-                ConfigManager.setChestRoutesUndoKeyCode(0);
-            } else {
-                ConfigManager.setChestRoutesUndoKeyCode(keyCode);
-            }
-            undoKeyButton.displayString = getUndoKeyButtonText();
-            GomodKeybinds.applyConfigBindings();
-            return;
-        }
-        if (awaitingFeetKey) {
-            awaitingFeetKey = false;
-            if (keyCode == Keyboard.KEY_ESCAPE) {
-                ConfigManager.setChestRoutesPlaceFeetKeyCode(0);
-            } else {
-                ConfigManager.setChestRoutesPlaceFeetKeyCode(keyCode);
-            }
-            feetKeyButton.displayString = getFeetKeyButtonText();
-            GomodKeybinds.applyConfigBindings();
+            refreshKeyButtonLabels();
             return;
         }
         super.keyTyped(typedChar, keyCode);
@@ -176,7 +174,7 @@ public class ChestRoutesSettingsGUI extends GuiScreen implements GomodMenuKeyboa
 
     @Override
     public boolean shouldBlockGomodMenuMovementAndDragLook() {
-        return awaitingFeetKey || awaitingToggleRenderKey || awaitingUndoKey;
+        return awaitingKeyTarget != AWAIT_NONE;
     }
 
     @Override

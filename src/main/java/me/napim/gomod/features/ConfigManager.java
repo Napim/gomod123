@@ -222,8 +222,21 @@ public class ConfigManager {
     private static boolean debugMessagesToChatEnabled = false;
     /** Adds tracked killers below Hypixel's Solo Blitz top-three result rows. */
     private static boolean blitzExtendedResultsEnabled = true;
-    /** Adds the right-click player-visibility dye to hotbar slot five during Blitz pregames. */
+    /** Adds the right-click player-visibility dye during Blitz pregames. */
     private static boolean blitzPregamePlayerToggleEnabled = true;
+    /** Adds the queue status skull during Blitz pregames. */
+    private static boolean blitzPregameQueueStatusItemEnabled = true;
+    /** Adds the right-click requeue paper during Blitz pregames. */
+    private static boolean blitzPregameRequeueItemEnabled = true;
+    /** Adds the right-click Hypixel online status changer disc during Blitz pregames. */
+    private static boolean blitzPregameStatusItemEnabled = true;
+    /** Customizable 1-based hotbar slots (3..8; slots 1, 2, 9 are reserved for Hypixel Blitz items). */
+    private static int blitzPregamePlayerToggleSlot = 8;
+    private static int blitzPregameQueueStatusSlot = 6;
+    private static int blitzPregameRequeueSlot = 4;
+    private static int blitzPregameStatusSlot = 5;
+    /** Last known Hypixel /status value (online, away, busy, offline) persisted across restarts. */
+    private static String blitzPregameHypixelStatus = "online";
     /** Shows the Blitz deathmatch Game End countdown on the Ender Dragon boss bar when time is low. */
     private static boolean deathmatchTimerBossBarEnabled = true;
     /** Remaining seconds threshold at which the Deathmatch Timer boss bar appears (5..60, default 30). */
@@ -265,6 +278,8 @@ public class ConfigManager {
     private static boolean shareInvAutoConnect = true;
     /** Latest mod version we already showed an in-game update notice for (see {@link GomodUpdateChecker}). */
     private static String lastNotifiedModVersion = "";
+    /** When true (opt-in), public builds automatically download and stage verified updates to install on exit. */
+    private static boolean autoUpdateEnabled = false;
     /** gomod friend usernames allowed for screenshot/shareinv actions; display casing is preserved. */
     private static java.util.List<String> gomodFriends = new java.util.ArrayList<String>();
     /** Stable install seed used to derive one gomod Social id per Minecraft account. */
@@ -383,10 +398,13 @@ public class ConfigManager {
 	/** Draw the entity hitbox for Blitz #rekt finisher armor-stand holograms. */
 	private static boolean blitzRektHitboxOverlayEnabled = false;
 	/** Extra client-side calibration padding around the Blitz #rekt collision outline, in blocks. */
-	private static double blitzRektHitboxPreviewLeft = 0.0D;
-	private static double blitzRektHitboxPreviewRight = 0.0D;
-	private static double blitzRektHitboxPreviewUp = 0.0D;
-	private static double blitzRektHitboxPreviewDown = 0.0D;
+	private static double blitzRektHitboxPreviewLeft = BlitzRektHitboxDefaultsMigration.DEFAULT_LEFT;
+	private static double blitzRektHitboxPreviewRight = BlitzRektHitboxDefaultsMigration.DEFAULT_RIGHT;
+	private static double blitzRektHitboxPreviewUp = BlitzRektHitboxDefaultsMigration.DEFAULT_UP;
+	private static double blitzRektHitboxPreviewDown = BlitzRektHitboxDefaultsMigration.DEFAULT_DOWN;
+	/** Highest one-time Blitz #rekt hitbox preview default migration applied to the saved config. */
+	private static int blitzRektHitboxPreviewDefaultsVersion =
+			BlitzRektHitboxDefaultsMigration.CURRENT_VERSION;
 	/** Highest one-time replay health-tag default migration applied to the saved config. */
 	private static int forceReplayPlayerHealthTagsDefaultsVersion =
 			ReplayHealthTagsDefaultsMigration.CURRENT_VERSION;
@@ -1169,6 +1187,7 @@ public class ConfigManager {
         boolean migrateRelayGameFeatureDefaults = false;
         boolean migrateReplayHealthTagsDefaults = false;
         boolean migrateKillCounterKeAllChatDefaults = false;
+        boolean migrateBlitzRektHitboxDefaults = false;
         boolean normalizePlayerNameDisplayModes = false;
         File configDirFile = getGomodDataDirectory();
         if (!configDirFile.exists()) {
@@ -1214,6 +1233,7 @@ public class ConfigManager {
             relayGameFeaturesDefaultsVersion = RelayFeatureDefaultsMigration.CURRENT_VERSION;
             forceReplayPlayerHealthTagsDefaultsVersion = ReplayHealthTagsDefaultsMigration.CURRENT_VERSION;
             killCounterShowKeAllChatDefaultsVersion = KillCounterKeAllChatDefaultsMigration.CURRENT_VERSION;
+            blitzRektHitboxPreviewDefaultsVersion = BlitzRektHitboxDefaultsMigration.CURRENT_VERSION;
             nickRealNametagOverlayEnabled = true;
             applyDefaultMoreHudRowPositions();
             applyAuthorDefaultMoreHudScalesOnly();
@@ -1234,6 +1254,8 @@ public class ConfigManager {
             forceReplayPlayerHealthTagsDefaultsVersion = ReplayHealthTagsDefaultsMigration.readVersion(config);
             migrateKillCounterKeAllChatDefaults = KillCounterKeAllChatDefaultsMigration.migrate(config);
             killCounterShowKeAllChatDefaultsVersion = KillCounterKeAllChatDefaultsMigration.readVersion(config);
+            migrateBlitzRektHitboxDefaults = BlitzRektHitboxDefaultsMigration.migrate(config);
+            blitzRektHitboxPreviewDefaultsVersion = BlitzRektHitboxDefaultsMigration.readVersion(config);
             
             // Load auto-queue settings (per-mode enable + migrate legacy single flag)
             boolean legacyAutoQueue = config.has("autoQueueEnabled") && config.get("autoQueueEnabled").getAsBoolean();
@@ -1481,6 +1503,34 @@ public class ConfigManager {
             if (config.has("blitzPregamePlayerToggleEnabled")) {
                 blitzPregamePlayerToggleEnabled = config.get("blitzPregamePlayerToggleEnabled").getAsBoolean();
             }
+            if (config.has("blitzPregameQueueStatusItemEnabled")) {
+                blitzPregameQueueStatusItemEnabled = config.get("blitzPregameQueueStatusItemEnabled").getAsBoolean();
+            }
+            if (config.has("blitzPregameRequeueItemEnabled")) {
+                blitzPregameRequeueItemEnabled = config.get("blitzPregameRequeueItemEnabled").getAsBoolean();
+            }
+            if (config.has("blitzPregameStatusItemEnabled")) {
+                blitzPregameStatusItemEnabled = config.get("blitzPregameStatusItemEnabled").getAsBoolean();
+            }
+            if (config.has("blitzPregamePlayerToggleSlot")) {
+                blitzPregamePlayerToggleSlot = clampBlitzPregameSlot(config.get("blitzPregamePlayerToggleSlot").getAsInt(), 8);
+            }
+            if (config.has("blitzPregameQueueStatusSlot")) {
+                blitzPregameQueueStatusSlot = clampBlitzPregameSlot(config.get("blitzPregameQueueStatusSlot").getAsInt(), 6);
+            }
+            if (config.has("blitzPregameRequeueSlot")) {
+                blitzPregameRequeueSlot = clampBlitzPregameSlot(config.get("blitzPregameRequeueSlot").getAsInt(), 4);
+            }
+            if (config.has("blitzPregameStatusSlot")) {
+                blitzPregameStatusSlot = clampBlitzPregameSlot(config.get("blitzPregameStatusSlot").getAsInt(), 5);
+            }
+            if (config.has("blitzPregameHypixelStatus")) {
+                String savedStatus = config.get("blitzPregameHypixelStatus").getAsString();
+                if (savedStatus != null && !savedStatus.trim().isEmpty()) {
+                    blitzPregameHypixelStatus = savedStatus.trim().toLowerCase(java.util.Locale.ROOT);
+                }
+            }
+            ensureDistinctBlitzPregameSlots();
             if (config.has("deathmatchTimerBossBarEnabled")) {
                 deathmatchTimerBossBarEnabled = config.get("deathmatchTimerBossBarEnabled").getAsBoolean();
             }
@@ -1541,6 +1591,9 @@ public class ConfigManager {
             }
             if (config.has("lastNotifiedModVersion")) {
                 lastNotifiedModVersion = config.get("lastNotifiedModVersion").getAsString();
+            }
+            if (config.has("autoUpdateEnabled")) {
+                autoUpdateEnabled = config.get("autoUpdateEnabled").getAsBoolean();
             }
             gomodSocialInstallId = "";
             gomodSocialId = "";
@@ -1798,10 +1851,14 @@ public class ConfigManager {
 		if (config.has("blitzRektHitboxOverlayEnabled")) {
 			blitzRektHitboxOverlayEnabled = config.get("blitzRektHitboxOverlayEnabled").getAsBoolean();
 		}
-		blitzRektHitboxPreviewLeft = readBlitzRektPreviewPadding(config, "blitzRektHitboxPreviewLeft");
-		blitzRektHitboxPreviewRight = readBlitzRektPreviewPadding(config, "blitzRektHitboxPreviewRight");
-		blitzRektHitboxPreviewUp = readBlitzRektPreviewPadding(config, "blitzRektHitboxPreviewUp");
-		blitzRektHitboxPreviewDown = readBlitzRektPreviewPadding(config, "blitzRektHitboxPreviewDown");
+		blitzRektHitboxPreviewLeft = readBlitzRektPreviewPadding(
+				config, "blitzRektHitboxPreviewLeft", BlitzRektHitboxDefaultsMigration.DEFAULT_LEFT);
+		blitzRektHitboxPreviewRight = readBlitzRektPreviewPadding(
+				config, "blitzRektHitboxPreviewRight", BlitzRektHitboxDefaultsMigration.DEFAULT_RIGHT);
+		blitzRektHitboxPreviewUp = readBlitzRektPreviewPadding(
+				config, "blitzRektHitboxPreviewUp", BlitzRektHitboxDefaultsMigration.DEFAULT_UP);
+		blitzRektHitboxPreviewDown = readBlitzRektPreviewPadding(
+				config, "blitzRektHitboxPreviewDown", BlitzRektHitboxDefaultsMigration.DEFAULT_DOWN);
         if (config.has("mobTargetDisplayEnabled")) {
 			mobTargetDisplayEnabled = config.get("mobTargetDisplayEnabled").getAsBoolean();
 		}
@@ -3108,6 +3165,7 @@ public class ConfigManager {
 
 			if (migrateLunarCosmeticsDefault || migrateRelayGameFeatureDefaults
 					|| migrateReplayHealthTagsDefaults || migrateKillCounterKeAllChatDefaults
+					|| migrateBlitzRektHitboxDefaults
 					|| normalizePlayerNameDisplayModes
 					|| publicLunarDefaultsChanged) {
                 // Save only after the complete configuration has been loaded so the migration
@@ -3141,6 +3199,7 @@ public class ConfigManager {
             forceReplayPlayerHealthTagsDefaultsVersion = ReplayHealthTagsDefaultsMigration.CURRENT_VERSION;
             killCounterShowKeAllChat = false;
             killCounterShowKeAllChatDefaultsVersion = KillCounterKeAllChatDefaultsMigration.CURRENT_VERSION;
+            blitzRektHitboxPreviewDefaultsVersion = BlitzRektHitboxDefaultsMigration.CURRENT_VERSION;
             enforceBetterPlayerFormatCompatibility();
             applyPublicLunarDefaults();
         }
@@ -3265,6 +3324,14 @@ public class ConfigManager {
         config.addProperty("debugMessagesToChatEnabled", debugMessagesToChatEnabled);
         config.addProperty("blitzExtendedResultsEnabled", blitzExtendedResultsEnabled);
         config.addProperty("blitzPregamePlayerToggleEnabled", blitzPregamePlayerToggleEnabled);
+        config.addProperty("blitzPregameQueueStatusItemEnabled", blitzPregameQueueStatusItemEnabled);
+        config.addProperty("blitzPregameRequeueItemEnabled", blitzPregameRequeueItemEnabled);
+        config.addProperty("blitzPregameStatusItemEnabled", blitzPregameStatusItemEnabled);
+        config.addProperty("blitzPregamePlayerToggleSlot", blitzPregamePlayerToggleSlot);
+        config.addProperty("blitzPregameQueueStatusSlot", blitzPregameQueueStatusSlot);
+        config.addProperty("blitzPregameRequeueSlot", blitzPregameRequeueSlot);
+        config.addProperty("blitzPregameStatusSlot", blitzPregameStatusSlot);
+        config.addProperty("blitzPregameHypixelStatus", blitzPregameHypixelStatus);
         config.addProperty("deathmatchTimerBossBarEnabled", deathmatchTimerBossBarEnabled);
         config.addProperty("deathmatchTimerBossBarThresholdSeconds", deathmatchTimerBossBarThresholdSeconds);
         config.addProperty("silentSpawnedMobStepsEnabled", silentSpawnedMobStepsEnabled);
@@ -3284,6 +3351,7 @@ public class ConfigManager {
         config.addProperty("shareInvAutoConnect", shareInvAutoConnect);
         config.addProperty("lastNotifiedModVersion",
                 lastNotifiedModVersion == null ? "" : lastNotifiedModVersion);
+        config.addProperty("autoUpdateEnabled", autoUpdateEnabled);
         syncGomodFriendsForCurrentAccount();
         com.google.gson.JsonObject friendsByAcc = new com.google.gson.JsonObject();
         for (java.util.Map.Entry<String, java.util.List<String>> e : gomodFriendsByAccount.entrySet()) {
@@ -3387,6 +3455,8 @@ public class ConfigManager {
 		config.addProperty("blitzRektHitboxPreviewRight", blitzRektHitboxPreviewRight);
 		config.addProperty("blitzRektHitboxPreviewUp", blitzRektHitboxPreviewUp);
 		config.addProperty("blitzRektHitboxPreviewDown", blitzRektHitboxPreviewDown);
+		config.addProperty("blitzRektHitboxPreviewDefaultsVersion",
+				blitzRektHitboxPreviewDefaultsVersion);
 		config.addProperty("forceReplayPlayerHealthTagsDefaultsVersion",
 				forceReplayPlayerHealthTagsDefaultsVersion);
 		config.addProperty("killCounterShowKeAllChatDefaultsVersion",
@@ -5552,6 +5622,192 @@ public class ConfigManager {
         saveConfig();
     }
 
+    public static boolean isBlitzPregameQueueStatusItemEnabled() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameQueueStatusItemEnabled;
+    }
+
+    public static void setBlitzPregameQueueStatusItemEnabled(boolean enabled) {
+        blitzPregameQueueStatusItemEnabled = enabled;
+        saveConfig();
+    }
+
+    public static boolean isBlitzPregameRequeueItemEnabled() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameRequeueItemEnabled;
+    }
+
+    public static void setBlitzPregameRequeueItemEnabled(boolean enabled) {
+        blitzPregameRequeueItemEnabled = enabled;
+        saveConfig();
+    }
+
+    public static boolean isBlitzPregameStatusItemEnabled() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameStatusItemEnabled;
+    }
+
+    public static void setBlitzPregameStatusItemEnabled(boolean enabled) {
+        blitzPregameStatusItemEnabled = enabled;
+        saveConfig();
+    }
+
+    public static String getBlitzPregameHypixelStatus() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameHypixelStatus;
+    }
+
+    public static void setBlitzPregameHypixelStatus(String status) {
+        String normalized = status == null || status.trim().isEmpty()
+                ? "online"
+                : status.trim().toLowerCase(java.util.Locale.ROOT);
+        if (normalized.equals(blitzPregameHypixelStatus)) {
+            return;
+        }
+        blitzPregameHypixelStatus = normalized;
+        saveConfig();
+    }
+
+    public static final int BLITZ_PREGAME_MIN_SLOT = 3;
+    public static final int BLITZ_PREGAME_MAX_SLOT = 8;
+
+    private static int clampBlitzPregameSlot(int slot, int fallback) {
+        if (slot < BLITZ_PREGAME_MIN_SLOT || slot > BLITZ_PREGAME_MAX_SLOT) {
+            return fallback;
+        }
+        return slot;
+    }
+
+    private static void ensureDistinctBlitzPregameSlots() {
+        blitzPregamePlayerToggleSlot = clampBlitzPregameSlot(blitzPregamePlayerToggleSlot, 8);
+        blitzPregameQueueStatusSlot = clampBlitzPregameSlot(blitzPregameQueueStatusSlot, 6);
+        blitzPregameRequeueSlot = clampBlitzPregameSlot(blitzPregameRequeueSlot, 4);
+        blitzPregameStatusSlot = clampBlitzPregameSlot(blitzPregameStatusSlot, 5);
+        if (blitzPregameQueueStatusSlot == blitzPregamePlayerToggleSlot) {
+            blitzPregameQueueStatusSlot = firstUnusedBlitzPregameSlot(blitzPregamePlayerToggleSlot, -1, -1);
+        }
+        if (blitzPregameRequeueSlot == blitzPregamePlayerToggleSlot
+                || blitzPregameRequeueSlot == blitzPregameQueueStatusSlot) {
+            blitzPregameRequeueSlot = firstUnusedBlitzPregameSlot(
+                    blitzPregamePlayerToggleSlot, blitzPregameQueueStatusSlot, -1);
+        }
+        if (blitzPregameStatusSlot == blitzPregamePlayerToggleSlot
+                || blitzPregameStatusSlot == blitzPregameQueueStatusSlot
+                || blitzPregameStatusSlot == blitzPregameRequeueSlot) {
+            blitzPregameStatusSlot = firstUnusedBlitzPregameSlot(
+                    blitzPregamePlayerToggleSlot, blitzPregameQueueStatusSlot, blitzPregameRequeueSlot);
+        }
+    }
+
+    private static int firstUnusedBlitzPregameSlot(int usedA, int usedB, int usedC) {
+        for (int s = BLITZ_PREGAME_MIN_SLOT; s <= BLITZ_PREGAME_MAX_SLOT; s++) {
+            if (s != usedA && s != usedB && s != usedC) {
+                return s;
+            }
+        }
+        return BLITZ_PREGAME_MIN_SLOT;
+    }
+
+    public static int getBlitzPregamePlayerToggleSlot() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregamePlayerToggleSlot;
+    }
+
+    public static void setBlitzPregamePlayerToggleSlot(int slot) {
+        int clamped = clampBlitzPregameSlot(slot, blitzPregamePlayerToggleSlot);
+        int prev = blitzPregamePlayerToggleSlot;
+        if (clamped == prev) return;
+        if (blitzPregameQueueStatusSlot == clamped) {
+            blitzPregameQueueStatusSlot = prev;
+        } else if (blitzPregameRequeueSlot == clamped) {
+            blitzPregameRequeueSlot = prev;
+        } else if (blitzPregameStatusSlot == clamped) {
+            blitzPregameStatusSlot = prev;
+        }
+        blitzPregamePlayerToggleSlot = clamped;
+        ensureDistinctBlitzPregameSlots();
+        saveConfig();
+    }
+
+    public static int getBlitzPregameQueueStatusSlot() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameQueueStatusSlot;
+    }
+
+    public static void setBlitzPregameQueueStatusSlot(int slot) {
+        int clamped = clampBlitzPregameSlot(slot, blitzPregameQueueStatusSlot);
+        int prev = blitzPregameQueueStatusSlot;
+        if (clamped == prev) return;
+        if (blitzPregamePlayerToggleSlot == clamped) {
+            blitzPregamePlayerToggleSlot = prev;
+        } else if (blitzPregameRequeueSlot == clamped) {
+            blitzPregameRequeueSlot = prev;
+        } else if (blitzPregameStatusSlot == clamped) {
+            blitzPregameStatusSlot = prev;
+        }
+        blitzPregameQueueStatusSlot = clamped;
+        ensureDistinctBlitzPregameSlots();
+        saveConfig();
+    }
+
+    public static int getBlitzPregameRequeueSlot() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameRequeueSlot;
+    }
+
+    public static void setBlitzPregameRequeueSlot(int slot) {
+        int clamped = clampBlitzPregameSlot(slot, blitzPregameRequeueSlot);
+        int prev = blitzPregameRequeueSlot;
+        if (clamped == prev) return;
+        if (blitzPregamePlayerToggleSlot == clamped) {
+            blitzPregamePlayerToggleSlot = prev;
+        } else if (blitzPregameQueueStatusSlot == clamped) {
+            blitzPregameQueueStatusSlot = prev;
+        } else if (blitzPregameStatusSlot == clamped) {
+            blitzPregameStatusSlot = prev;
+        }
+        blitzPregameRequeueSlot = clamped;
+        ensureDistinctBlitzPregameSlots();
+        saveConfig();
+    }
+
+    public static int getBlitzPregameStatusSlot() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return blitzPregameStatusSlot;
+    }
+
+    public static void setBlitzPregameStatusSlot(int slot) {
+        int clamped = clampBlitzPregameSlot(slot, blitzPregameStatusSlot);
+        int prev = blitzPregameStatusSlot;
+        if (clamped == prev) return;
+        if (blitzPregamePlayerToggleSlot == clamped) {
+            blitzPregamePlayerToggleSlot = prev;
+        } else if (blitzPregameQueueStatusSlot == clamped) {
+            blitzPregameQueueStatusSlot = prev;
+        } else if (blitzPregameRequeueSlot == clamped) {
+            blitzPregameRequeueSlot = prev;
+        }
+        blitzPregameStatusSlot = clamped;
+        ensureDistinctBlitzPregameSlots();
+        saveConfig();
+    }
+
     public static boolean isDeathmatchTimerBossBarEnabled() {
         if (!loaded) {
             loadConfig();
@@ -5953,6 +6209,18 @@ public class ConfigManager {
 
     public static void setLastNotifiedModVersion(String version) {
         lastNotifiedModVersion = version == null ? "" : version.trim();
+        saveConfig();
+    }
+
+    public static boolean isAutoUpdateEnabled() {
+        if (!loaded) {
+            loadConfig();
+        }
+        return autoUpdateEnabled;
+    }
+
+    public static void setAutoUpdateEnabled(boolean enabled) {
+        autoUpdateEnabled = enabled;
         saveConfig();
     }
 
@@ -7634,21 +7902,21 @@ public class ConfigManager {
 
 	public static void resetBlitzRektHitboxPreviewPadding() {
 		if (!loaded) loadConfig();
-		blitzRektHitboxPreviewLeft = 0.0D;
-		blitzRektHitboxPreviewRight = 0.0D;
-		blitzRektHitboxPreviewUp = 0.0D;
-		blitzRektHitboxPreviewDown = 0.0D;
+		blitzRektHitboxPreviewLeft = BlitzRektHitboxDefaultsMigration.DEFAULT_LEFT;
+		blitzRektHitboxPreviewRight = BlitzRektHitboxDefaultsMigration.DEFAULT_RIGHT;
+		blitzRektHitboxPreviewUp = BlitzRektHitboxDefaultsMigration.DEFAULT_UP;
+		blitzRektHitboxPreviewDown = BlitzRektHitboxDefaultsMigration.DEFAULT_DOWN;
 		saveConfig();
 	}
 
-	private static double readBlitzRektPreviewPadding(JsonObject config, String key) {
-		if (!config.has(key)) return 0.0D;
+	private static double readBlitzRektPreviewPadding(JsonObject config, String key, double defaultValue) {
+		if (!config.has(key)) return defaultValue;
 		try {
 			double value = config.get(key).getAsDouble();
 			return Double.isNaN(value) || Double.isInfinite(value)
-					? 0.0D : Math.max(-8.0D, Math.min(8.0D, value));
+					? defaultValue : Math.max(-8.0D, Math.min(8.0D, value));
 		} catch (RuntimeException ignored) {
-			return 0.0D;
+			return defaultValue;
 		}
 	}
 

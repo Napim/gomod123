@@ -14,7 +14,7 @@ apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: "org.spongepowered.mixin"
 
 def gomodVersionPropsFile = file("src/main/resources/gomod.version.properties")
-def gomodVersion = "1.0.0"
+def gomodVersion = "1.0.1"
 if (gomodVersionPropsFile.exists()) {
     def gomodVersionProps = new Properties()
     gomodVersionPropsFile.withInputStream { gomodVersionProps.load(it) }

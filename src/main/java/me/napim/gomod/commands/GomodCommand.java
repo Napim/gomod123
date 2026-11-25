@@ -47,6 +47,10 @@ public class GomodCommand extends Command {
                 case "status":
                     showStatus();
                     break;
+                case "update":
+                case "updates":
+                    handleUpdateCommand(args);
+                    break;
                 default:
                     showHelp();
                     break;
@@ -54,11 +58,34 @@ public class GomodCommand extends Command {
         }
     }
     
+    private void handleUpdateCommand(String[] args) {
+        if (args.length >= 2 && "dismiss".equalsIgnoreCase(args[1])) {
+            me.napim.gomod.features.GomodUpdateChecker.dismissCurrentUpdate();
+            return;
+        }
+        me.napim.gomod.features.GomodAutoUpdater.checkForUpdatesAsync(true, false);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100L);
+                } catch (InterruptedException ignored) {}
+                Minecraft.getMinecraft().addScheduledTask(new Runnable() {
+                    @Override
+                    public void run() {
+                        GuiOpener.open("me.napim.gomod.gui.GomodUpdateGUI");
+                    }
+                });
+            }
+        }, "OpenGomodUpdateGui").start();
+    }
+
     private void showHelp() {
         sendMessage(Main.CHAT_PREFIX + EnumChatFormatting.YELLOW + "gomod Commands:");
         sendMessage(EnumChatFormatting.YELLOW + "  /gomod" + EnumChatFormatting.WHITE + " - Open gomod Main Menu GUI");
         sendMessage(EnumChatFormatting.YELLOW + "  /gomod api hypixel <key>" + EnumChatFormatting.WHITE + " - Set Hypixel API key");
         sendMessage(EnumChatFormatting.YELLOW + "  /gomod status" + EnumChatFormatting.WHITE + " - Show current status");
+        sendMessage(EnumChatFormatting.YELLOW + "  /gomod update" + EnumChatFormatting.WHITE + " - Check for and install gomod updates");
         sendMessage(EnumChatFormatting.YELLOW + "  /gomod help" + EnumChatFormatting.WHITE + " - Show this help message");
         sendMessage(EnumChatFormatting.GRAY + "gostats123, Map Queuer, Player Queuer, TAB QoL, HUD layout: use the main menu (gomod \u2192 buttons or Edit HUD).");
     }

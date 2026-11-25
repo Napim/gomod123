@@ -34,7 +34,7 @@ public final class LunarStudioBadgeTransformTest {
     private static final String SIZE = "me/napim/gomod/features/LunarCosmeticSizeRenderer";
     private static final String FIT_APPEARANCE = "me/napim/gomod/features/LunarFitAppearance";
     private static final File ACTIVE_LUNAR_JAR =
-            new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+            new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
 
     @Test
     public void structuralBadgeManagerHookMatchesArbitraryNamesAndFailsClosedOnAmbiguity() {

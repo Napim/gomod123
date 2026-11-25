@@ -28,6 +28,7 @@ public class EntityPlayerSPMixin {
         try {
             me.napim.gomod.features.PlayerQueuer.onOutgoingChatCommand(message);
             me.napim.gomod.features.AutoQueue.onOutgoingChatCommand(message);
+            me.napim.gomod.features.BlitzPregamePlayerToggle.onOutgoingChatCommand(message);
         } catch (Throwable ignored) {
         }
         try {

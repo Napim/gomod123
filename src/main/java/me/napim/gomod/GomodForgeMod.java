@@ -4,7 +4,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-@Mod(modid = "gomod123", name = "gomod123", version = "1.0.0", clientSideOnly = true, acceptedMinecraftVersions = "[1.8.9]")
+@Mod(modid = "gomod123", name = "gomod123", version = "1.0.1", clientSideOnly = true, acceptedMinecraftVersions = "[1.8.9]")
 public class GomodForgeMod {
 
     @Mod.EventHandler

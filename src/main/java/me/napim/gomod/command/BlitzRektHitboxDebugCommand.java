@@ -49,7 +49,7 @@ public final class BlitzRektHitboxDebugCommand extends Command {
             if ("reset".equals(action)) {
                 GomodFixes.resetBlitzRektHitboxPreviewPadding();
                 Main.sendMessage(Main.CHAT_PREFIX + EnumChatFormatting.GREEN
-                        + "Reset #rekt preview padding. Orange is the base outline; cyan appears after adjustments.");
+                        + "Reset #rekt preview padding to default (" + formatPaddingStatus() + ").");
                 return;
             }
             if ("adjust".equals(action)) {

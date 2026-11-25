@@ -101,6 +101,78 @@ public final class GoStatsLeaderboardClient {
         fetchPageInternal(offset, scope, metric, kit, search, limit, filters, debugJobId, callback);
     }
 
+    public interface StreamCallback {
+        void onChunk(List<Player> chunk, int totalPlayers);
+
+        void onDone(int totalPlayers, String error);
+
+        boolean isCancelled();
+    }
+
+    /** First streaming page size when no offset-0 rows are preloaded, so workers can start quickly. */
+    static final int INITIAL_STREAM_CHUNK_SIZE = 50;
+    /** Subsequent streaming page size while workers are already refreshing earlier rows. */
+    static final int STREAM_CHUNK_SIZE = 250;
+
+    /**
+     * Streams a top-N selection page by page so batch refresh workers can start updating
+     * already-loaded rows immediately while remaining pages load in the background.
+     */
+    public static void streamTopPlayersForBatchRefresh(final String scope, final String metric,
+                                                       final String kit, final int requestedCount,
+                                                       final KitFilters filters, final long debugJobId,
+                                                       final List<Player> initialRows, final int initialOffset,
+                                                       final int initialTotal, final StreamCallback callback) {
+        if (callback == null) return;
+        final int targetCount = Math.max(1, Math.min(950, requestedCount));
+        final String safeScope = normalizeScope(scope);
+        final String safeMetric = normalizeMetric(metric);
+        final String safeKit = safeText(kit, 64);
+        final List<Player> preloaded = initialRows == null
+                ? Collections.<Player>emptyList() : new ArrayList<Player>(initialRows);
+        final int preloadedOffset = preloaded.isEmpty() ? 0 : Math.max(preloaded.size(), initialOffset);
+        final int preloadedTotal = Math.max(0, initialTotal);
+        REQUESTS.execute(new Runnable() {
+            @Override
+            public void run() {
+                int total = preloadedTotal;
+                try {
+                    Set<String> seen = new HashSet<String>();
+                    List<Player> initialAccepted = new ArrayList<Player>(Math.min(targetCount, preloaded.size()));
+                    appendUniquePlayers(initialAccepted, seen, preloaded, targetCount);
+                    int collected = initialAccepted.size();
+                    int offset = preloadedOffset;
+                    boolean firstRemotePage = initialAccepted.isEmpty();
+
+                    while (!callback.isCancelled() && collected < targetCount && (total <= 0 || offset < total)) {
+                        int remaining = targetCount - collected;
+                        int maxChunk = firstRemotePage ? INITIAL_STREAM_CHUNK_SIZE : STREAM_CHUNK_SIZE;
+                        int limit = Math.min(MAX_PAGE_SIZE, Math.min(maxChunk, remaining));
+                        Page page = readPage(offset, safeScope, safeMetric, safeKit, "", limit,
+                                filters, debugJobId);
+                        if (page == null) throw new Exception("gostats123 returned no leaderboard page");
+                        if (page.total > 0 || total <= 0) total = page.total;
+                        int received = page.players.size();
+                        if (received == 0) break;
+                        List<Player> chunk = new ArrayList<Player>(received);
+                        appendUniquePlayers(chunk, seen, page.players, targetCount - collected);
+                        collected += chunk.size();
+                        firstRemotePage = false;
+                        if (!chunk.isEmpty()) {
+                            callback.onChunk(chunk, total);
+                        }
+                        int nextOffset = page.offset + received;
+                        if (nextOffset <= offset) break;
+                        offset = nextOffset;
+                    }
+                    callback.onDone(total, null);
+                } catch (Exception error) {
+                    callback.onDone(total, safeMessage(error));
+                }
+            }
+        });
+    }
+
     /**
      * Loads a large top-N selection in bounded leaderboard pages. The public API caps
      * each page at 500 rows, so Top 700–950 needs a second page. Rows already loaded

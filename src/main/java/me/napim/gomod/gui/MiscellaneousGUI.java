@@ -17,7 +17,6 @@ import me.napim.gomod.features.MountXpOverlay;
 import me.napim.gomod.features.HorseDonkeyTracker;
 import me.napim.gomod.features.PlayerCaller;
 import me.napim.gomod.features.BestArmorDisplay;
-import me.napim.gomod.features.BlitzPregamePlayerToggle;
 import me.napim.gomod.features.RadialMenuWheel;
 import me.napim.gomod.features.SelfOpacity;
 import me.napim.gomod.features.UselessItemOverlay;
@@ -208,14 +207,13 @@ public class MiscellaneousGUI extends GuiScreen {
                 EnumChatFormatting.GRAY + "Back to Menu");
 
         gridButtons.clear();
-        // White-text feature rows.
+        // White-text feature rows (always shown before orange/gold rows).
         gridButtons.add(lobbyPingButton);
         gridButtons.add(starTextButton);
-        gridButtons.add(blitzPregamePlayerToggleButton);
-        gridButtons.add(mountHeadDimButton);
         gridButtons.add(mainMenuQueueButtonsButton);
 
         // Gold feature rows with an ON/OFF state.
+        gridButtons.add(mountHeadDimButton);
         gridButtons.add(blitzExtendedResultsButton);
         gridButtons.add(deathmatchTimerButton);
         gridButtons.add(heldItemInfoButton);
@@ -236,6 +234,7 @@ public class MiscellaneousGUI extends GuiScreen {
         gridButtons.add(tntPlacementPreviewButton);
 
         // Gold settings/browser rows without an ON/OFF state.
+        gridButtons.add(blitzPregamePlayerToggleButton);
         gridButtons.add(denickerButton);
         gridButtons.add(lightningNerfButton);
         gridButtons.add(cageSettingsButton);
@@ -476,10 +475,7 @@ public class MiscellaneousGUI extends GuiScreen {
                 this.mc.displayGuiScreen(new ChatMovementSettingsGUI(this));
                 break;
             case 41:
-                ConfigManager.setBlitzPregamePlayerToggleEnabled(
-                        !ConfigManager.isBlitzPregamePlayerToggleEnabled());
-                BlitzPregamePlayerToggle.onModuleSettingChanged();
-                blitzPregamePlayerToggleButton.displayString = getBlitzPregamePlayerToggleText();
+                this.mc.displayGuiScreen(new PregameItemsSettingsGUI(this));
                 break;
             case 42:
                 if (GomodFixes.isWeaveRuntime()) {
@@ -670,10 +666,7 @@ public class MiscellaneousGUI extends GuiScreen {
     }
 
     private String getBlitzPregamePlayerToggleText() {
-        return EnumChatFormatting.WHITE + "Pregame visibility item: "
-                + (ConfigManager.isBlitzPregamePlayerToggleEnabled()
-                ? EnumChatFormatting.GREEN + "ON"
-                : EnumChatFormatting.RED + "OFF");
+        return EnumChatFormatting.GOLD + "Pre-game tools";
     }
 
     void refreshBlitzExtendedResultsButtonLabel() {
@@ -943,8 +936,9 @@ public class MiscellaneousGUI extends GuiScreen {
         }
         if (isMouseOver(blitzPregamePlayerToggleButton, mouseX, mouseY)) {
             drawTooltip(mouseX, mouseY,
-                    EnumChatFormatting.AQUA + "Blitz pregame player item",
-                    EnumChatFormatting.GRAY + "Adds a player visibility toggle item in Blitz pregames");
+                    EnumChatFormatting.AQUA + "Pre-game tools",
+                    EnumChatFormatting.GRAY + "Configure client-side Blitz pregame hotbar tools:",
+                    EnumChatFormatting.GRAY + "Player visibility dye, Queue status skull, and Requeue paper");
             return;
         }
         if (isMouseOver(heldItemInfoButton, mouseX, mouseY)) {

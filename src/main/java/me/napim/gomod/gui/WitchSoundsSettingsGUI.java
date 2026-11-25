@@ -21,7 +21,6 @@ public class WitchSoundsSettingsGUI extends GuiScreen {
     private static final int MAX_COL_WIDTH = 194;
     private static final int MIN_COL_WIDTH = 148;
     private static final int COL_GAP = 22;
-    private static final int CARD_PAD_X = 8;
     private static final int CARD_PAD_TOP = 20;
     private static final int CARD_PAD_BOTTOM = 8;
 
@@ -47,7 +46,6 @@ public class WitchSoundsSettingsGUI extends GuiScreen {
     private int rightColX;
     private int colWidth;
     private int cardTopY;
-    private int cardBottomY;
 
     public WitchSoundsSettingsGUI(GuiScreen parent) {
         this.parent = parent;
@@ -83,7 +81,6 @@ public class WitchSoundsSettingsGUI extends GuiScreen {
         }
 
         cardTopY = titleBottom + Math.max(0, (availableH - totalCardH) / 2);
-        cardBottomY = cardTopY + totalCardH;
         int controlsTopY = cardTopY + CARD_PAD_TOP;
         int sliderTopY = controlsTopY + BUTTON_HEIGHT + toggleGap;
 
@@ -207,14 +204,6 @@ public class WitchSoundsSettingsGUI extends GuiScreen {
     }
 
     private void drawSectionCard(int colX, int width, String header, int accentColor) {
-        int left = colX - CARD_PAD_X;
-        int right = colX + width + CARD_PAD_X;
-        drawRect(left, cardTopY, right, cardBottomY, 0x45000000);
-        drawRect(left, cardTopY, right, cardTopY + 1, 0x35FFFFFF);
-        drawRect(left, cardBottomY - 1, right, cardBottomY, 0x35FFFFFF);
-        drawRect(left, cardTopY, left + 1, cardBottomY, 0x35FFFFFF);
-        drawRect(right - 1, cardTopY, right, cardBottomY, 0x35FFFFFF);
-
         int hw = fontRendererObj.getStringWidth(header);
         fontRendererObj.drawStringWithShadow(header, colX + (width - hw) / 2, cardTopY + 5, 0xFFFFFF);
         drawRect(colX + 4, cardTopY + 16, colX + width - 4, cardTopY + 17, accentColor);

@@ -104,7 +104,7 @@ public final class LunarMenuSearchFocusTransformTest {
 
     @Test
     public void transformsActiveLunarJarModsAndStaffPages() throws Exception {
-        File lunarJar = new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+        File lunarJar = new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
         if (!lunarJar.isFile()) {
             return;
         }

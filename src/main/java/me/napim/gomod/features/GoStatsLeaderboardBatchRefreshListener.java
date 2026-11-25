@@ -6,6 +6,11 @@ import java.util.List;
 public interface GoStatsLeaderboardBatchRefreshListener {
     void onTop350PlayersLoaded(long jobId, List<GoStatsLeaderboardClient.Player> players, int totalPlayers);
 
+    /** Called when additional target pages finish loading while earlier players are already updating. */
+    default void onTop350PlayersAppended(long jobId, List<GoStatsLeaderboardClient.Player> appendedPlayers,
+                                         int totalTargets, int totalPlayers) {
+    }
+
     void onTop350PlayerStarted(long jobId, GoStatsLeaderboardClient.Player player,
                                int started, int total);
 

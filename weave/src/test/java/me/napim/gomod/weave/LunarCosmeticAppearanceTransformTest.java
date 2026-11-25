@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 public final class LunarCosmeticAppearanceTransformTest {
     private static final String HELPER = "me/napim/gomod/features/LunarCosmeticAppearanceRenderer";
     private static final File ACTIVE_LUNAR_JAR =
-            new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+            new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
 
     @Test
     public void structuralDeferredDrawAndFactoryHooksMatchArbitraryObfuscatedNames() {

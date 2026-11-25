@@ -109,7 +109,7 @@ public final class LunarHypixelBlitzStatsTest {
 
     @Test
     public void realLunarJarTransformsCleanlyWhenPresent() throws Exception {
-        File lunarJar = new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+        File lunarJar = new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
         if (!lunarJar.isFile()) return;
 
         List<String> transformedNames = new ArrayList<>();

@@ -46,7 +46,7 @@ public class LunarLockerUiBundlePatcherTest {
                 + "MenuWrap=({cosmetic:c,children:ch,onSettings:s,getDiscordRewardCtaText:gt,onDiscordRewardCta:ct,outfit:of})=>{"
                 + "const[st,setSt]=ReactMod.useState({visible:!1,cachedCosmetic:c}),cur=st.cachedCosmetic;"
                 + "return k.jsx(CtxMenu,{options:cur?k.jsx(MenuBody,{cosmetic:cur,isEquipped:!1,onSettings:()=>{}}):null,children:ch})},"
-                + "CosTile=e=>{const{cosmetic:n,outfits:i,topRight:h}=e;"
+                + "CosTile=p=>{const{cosmetic:n,outfits:i,topRight:h}=p;"
                 + "const x=k.jsx(Tip,{placement:\"right-start\",content:k.jsx(TipBox,{children:k.jsxs(\"div\",{style:{display:\"flex\"},"
                 + "children:[k.jsx(Txt,{fontFamily:\"modern\",fontSize:\"14px\",color:\"var(--colors-neutrals-space-11)\","
                 + "fontWeight:\"500\",children:\"Active in outfits:\"})]})})});"
@@ -64,16 +64,16 @@ public class LunarLockerUiBundlePatcherTest {
                 + "onSort=ReactMod.useCallback(val=>{sr.current=val,allRef.current=allRef.current.sort(cmpFn),setVis([...visRef.current].sort(cmpFn)),markSeen()},[setVis,markSeen,allRef]);"
                 + "return{pageEmptyReason:0,handleCosmeticSort:onSort}},"
                 + "Done=()=>k.jsx(Btn,{text:\"Finish\",type:\"secondary\",onClick:()=>{}}),"
-                + "Screen=({cosmetics:e,cosmetic:n,onReturn:s})=>{const i=ReactMod.useRef(!1),"
-                + "[o,c]=ReactMod.useState([]),[a,d]=ReactMod.useState(n),[u,l]=ReactMod.useState(null);"
-                + "return k.jsx(Sec,{title:\"Cosmetic Settings\",children:o.length==0?"
-                + "k.jsx(\"span\",{children:\"This cosmetic does not have any settings.\"}):o},\"COSMETIC_SETTINGS\")};"
+                + "Screen=({cosmetics:cs,cosmetic:cm,onReturn:ret})=>{const dirty=ReactMod.useRef(!1),"
+                + "[opts,setOpts]=ReactMod.useState([]),[ed,setEd]=ReactMod.useState(cm),[fit,setFit]=ReactMod.useState(null);"
+                + "return k.jsx(Sec,{title:\"Cosmetic Settings\",children:opts.length==0?"
+                + "k.jsx(\"span\",{children:\"This cosmetic does not have any settings.\"}):opts},\"COSMETIC_SETTINGS\")};"
                 + "export{Screen as LockerView};";
         String patchedAppearance = LunarLockerUiBundlePatcher.transformChunkedCosmeticAppearanceIndex5(index5, fragment);
         assertTrue(patchedAppearance.contains("import{R as GomodLockerSlider}from\"./color-picker-option.js\";"));
         assertTrue(patchedAppearance.contains("GomodCosmeticAppearanceSettings=GomodCosmeticAppearanceCreate(ReactMod,k,Btn,GomodLockerSlider)"));
-        assertTrue(patchedAppearance.contains("title:\"Appearance\",children:k.jsx(GomodCosmeticAppearanceSettings,{cosmeticId:n.id,cosmeticName:n.name,cosmeticType:n.type,fitId:u&&u.id})"));
-        assertTrue(patchedAppearance.contains("o.length>0&&k.jsx(Sec,{title:\"Cosmetic Settings\",children:"));
+        assertTrue(patchedAppearance.contains("title:\"Appearance\",children:k.jsx(GomodCosmeticAppearanceSettings,{cosmeticId:cm.id,cosmeticName:cm.name,cosmeticType:cm.type,fitId:fit&&fit.id})"));
+        assertTrue(patchedAppearance.contains("opts.length>0&&k.jsx(Sec,{title:\"Cosmetic Settings\",children:"));
         assertEquals(patchedAppearance, LunarLockerUiBundlePatcher.transformChunkedCosmeticAppearanceIndex5(patchedAppearance, fragment));
 
         String patchedFull = LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(patchedAppearance, extrasFragment);
@@ -134,7 +134,7 @@ public class LunarLockerUiBundlePatcherTest {
         String extrasThenStudio = LunarLockerUiBundlePatcher.transformChunkedBadgeStudioIndex5(
                 LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(source, extrasFragment),
                 badgeStudioFragment);
-        assertTrue(extrasThenStudio.contains("\"data-gomod-badge-studio\":\"v2-chunked\""));
+        assertTrue(extrasThenStudio.contains("\"data-gomod-badge-studio\":\"v3-chunked\""));
         assertTrue(extrasThenStudio.contains("window.lunar.gomodStudioOpen"));
         assertTrue(badgeStudioFragment.contains("cb=window.lunar,value=cb&&typeof cb.gomodIsLunarFullAccessEnabled===\"function\""));
         assertTrue(extrasThenStudio.contains("GomodUseBadgeFilter(p.ownedBadge.badge.id)"));
@@ -168,9 +168,12 @@ public class LunarLockerUiBundlePatcherTest {
         String fragment = readChunkedFragment();
         String extrasFragment = readChunkedExtrasFragment();
         String badgeStudioFragment = readChunkedBadgeStudioFragment();
+        String nametagLogoColorFragment = readResource("/gomod/lunar-nametag-logo-color-chunked-ui-fragment.js");
         String[] hashes = new String[] {
                 "43eb053f79d6a7ea3aff09c8c8177173017cdcb3",
-                "85deb607f28f24769b366c6316f3142f0141703d"
+                "85deb607f28f24769b366c6316f3142f0141703d",
+                "edbf85150d81c6279048b0824cd57044cee22d71",
+                "b593beb940d7d1d4e17d718fc1b35524ba7fb760"
         };
         int checked = 0;
         for (String hash : hashes) {
@@ -181,15 +184,18 @@ public class LunarLockerUiBundlePatcherTest {
             if (!Files.isRegularFile(index5) || !Files.isRegularFile(slider) || !Files.isRegularFile(windowBase)) {
                 continue;
             }
-            String patchedIndex5 = LunarLockerUiBundlePatcher.transformChunkedBadgeStudioIndex5(
-                    LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(
-                            LunarLockerUiBundlePatcher.transformChunkedCosmeticAppearanceIndex5(
-                                    readUtf8(index5), fragment),
-                            extrasFragment),
-                    badgeStudioFragment);
-            assertTrue(patchedIndex5.contains("\"data-gomod-cosmetic-appearance\":\"v11-chunked\""));
-            assertTrue(patchedIndex5.contains("\"data-gomod-locker-extras\":\"v3-chunked\""));
-            assertTrue(patchedIndex5.contains("\"data-gomod-badge-studio\":\"v2-chunked\""));
+            String patchedIndex5 = LunarLockerUiBundlePatcher.transformChunkedNametagLogoColorIndex5(
+                    LunarLockerUiBundlePatcher.transformChunkedBadgeStudioIndex5(
+                            LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(
+                                    LunarLockerUiBundlePatcher.transformChunkedCosmeticAppearanceIndex5(
+                                            readUtf8(index5), fragment),
+                                    extrasFragment),
+                            badgeStudioFragment),
+                    nametagLogoColorFragment);
+            assertTrue(patchedIndex5.contains("\"data-gomod-cosmetic-appearance\":\"v12-chunked\""));
+            assertTrue(patchedIndex5.contains("type:\"success\",stretch:!1,text:saving?\"Saving...\":\"Apply settings\""));
+            assertTrue(patchedIndex5.contains("\"data-gomod-locker-extras\":\"v4-chunked\""));
+            assertTrue(patchedIndex5.contains("\"data-gomod-badge-studio\":\"v3-chunked\""));
             assertTrue(patchedIndex5.contains("title:\"Appearance\""));
             assertTrue(patchedIndex5.contains("GomodResetContextItem,{kind:\"cosmetic\",id:"));
             assertTrue(patchedIndex5.contains("GomodCosmeticOwnershipBadge,{cosmeticId:"));
@@ -198,15 +204,28 @@ public class LunarLockerUiBundlePatcherTest {
             assertTrue(patchedIndex5.contains("GomodUseBadgeFilter("));
             assertTrue(patchedIndex5.contains("GomodCustomBadgeImage,{badgeId:"));
             assertTrue(patchedIndex5.contains("GomodLockerItemContext,{kind:\"badge\",id:"));
-            assertTrue(patchedIndex5.contains("GomodStudioLauncher,{kind:\"badge\",item:"));
+            if (patchedIndex5.contains("gui.nametag.badge")) {
+                assertFalse(patchedIndex5.contains("GomodStudioLauncher,{kind:\"badge\",item:"));
+                assertTrue(patchedIndex5.contains("\"data-gomod-nametag-logo-color\":\"v4-chunked\""));
+                assertTrue(patchedIndex5.contains("GomodNametagLogoColorSection,{searchText:"));
+                assertTrue(patchedIndex5.contains("GomodUseNametagLogoColor("));
+                assertTrue(patchedIndex5.contains("label:\"None\",selected:0==="));
+                assertTrue(patchedIndex5.contains("hasChanges&&i.jsx(Button,{type:\"secondary\",stretch:!1,size:\"sm\",text:\"Cancel\""));
+                assertTrue(patchedIndex5.contains("className:\"nametagTour4\""));
+                assertTrue(patchedIndex5.contains(",scrollable:!1,"));
+            } else {
+                assertTrue(patchedIndex5.contains("GomodStudioLauncher,{kind:\"badge\",item:"));
+            }
             assertTrue(patchedIndex5.contains("right:0,top:0,zIndex:20"));
             assertTrue(patchedIndex5.contains("id:\"edited-first\",label:\"Edited first\",shortLabel:\"EDIT\""));
             assertTrue(patchedIndex5.contains("GomodCosmeticSortSubscribe("));
             assertFalse(patchedIndex5.contains("title:\"Cosmetic Settings\"") && !patchedIndex5.contains("o.length>0&&"));
-            assertEquals(patchedIndex5, LunarLockerUiBundlePatcher.transformChunkedBadgeStudioIndex5(
-                    LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(
-                            patchedIndex5, extrasFragment),
-                    badgeStudioFragment));
+            assertEquals(patchedIndex5, LunarLockerUiBundlePatcher.transformChunkedNametagLogoColorIndex5(
+                    LunarLockerUiBundlePatcher.transformChunkedBadgeStudioIndex5(
+                            LunarLockerUiBundlePatcher.transformChunkedLockerExtrasIndex5(
+                                    patchedIndex5, extrasFragment),
+                            badgeStudioFragment),
+                    nametagLogoColorFragment));
 
             String patchedSlider = LunarLockerUiBundlePatcher.transformChunkedSliderFormatting(readUtf8(slider));
             assertTrue(patchedSlider.contains("e.format?e.format("));

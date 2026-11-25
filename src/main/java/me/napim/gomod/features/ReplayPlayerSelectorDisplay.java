@@ -274,12 +274,13 @@ public final class ReplayPlayerSelectorDisplay {
 
     /**
      * The live Blitz Teleporter head rows remain available to spectators after their player entities stop
-     * rendering. Read their server-owned lore as a second kit source and feed the existing TAB cache.
+     * rendering. Read their server-owned lore as a second kit source and feed the shared enemy-kit cache
+     * (used by TAB when Show enemy players' kits is on and by Detailed end-game score when enabled).
      */
     private static void captureTeleporterEnemyKits(Minecraft mc) {
-        if (!KillCounter.isShowEnemyKits()) {
+        if (!KillCounter.shouldCollectEnemyKits()) {
             lastTeleporterKitContainer = null;
-            lastTeleporterKitScanSummary = "not scanned (Show enemy players' kits is disabled)";
+            lastTeleporterKitScanSummary = "not scanned (Show enemy players' kits and Detailed end-game score are disabled)";
             return;
         }
         if (mc == null || mc.thePlayer == null || mc.thePlayer.openContainer == null) {

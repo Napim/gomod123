@@ -45,7 +45,7 @@ public final class LunarQuickplayPersistenceTransformTest {
 
     @Test
     public void realLunarJarQuickplayAndSettingsManagerTransformCleanly() throws Exception {
-        File lunarJar = new File(System.getProperty("user.home"), ".lunarclient/offline/multiver/lunar.jar");
+        File lunarJar = new File("C:/Users/admin0/.lunarclient/offline/multiver/lunar.jar");
         if (!lunarJar.isFile()) return;
 
         List<String> transformed = new ArrayList<>();

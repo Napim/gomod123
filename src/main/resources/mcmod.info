@@ -2,10 +2,10 @@
   {
     "modid": "gomod123",
     "name": "gomod123",
-    "description": "Hypixel Blitz Survival Games utility, HUD, and QoL mod for Minecraft 1.8.9.",
-    "version": "1.0.0",
+    "description": "Forge 1.8.9 client mod (Weave-era code ported; maintained on Forge only).",
+    "version": "1.0.1",
     "mcversion": "1.8.9",
-    "url": "https://github.com/Napim/gomod123",
+    "url": "",
     "authorList": ["napim"],
     "credits": "",
     "logoFile": "icon.png"

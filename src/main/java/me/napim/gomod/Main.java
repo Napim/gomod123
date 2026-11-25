@@ -28,6 +28,7 @@ public class Main implements ModInitializer {
     private final DeathmatchTabCleaner deathmatchTabCleaner = new DeathmatchTabCleaner();
     private final LocalDisguiseSync localDisguiseSync = new LocalDisguiseSync();
     private final RemoteDisguiseSync remoteDisguiseSync = new RemoteDisguiseSync();
+    private final PartySpamCommand partySpamCommand = new PartySpamCommand();
     private static final GlobalChatClient GLOBAL_CHAT_CLIENT = new GlobalChatClient();
     public static final String CHAT_PREFIX;
     private static boolean commandsRegistered = false;
@@ -49,6 +50,7 @@ public class Main implements ModInitializer {
         System.out.println("Initializing gomod mod!");
         try { ReflectionLogger.installGlobalHandler(); } catch (Throwable var2) { }
         ConfigManager.loadConfig();
+        me.napim.gomod.features.GomodAutoUpdater.cleanupStaleCache();
         GomodSocialChat.init();
         ApiKeyManager.loadApiKeys();
         GomodKeybinds.register();
@@ -74,6 +76,7 @@ public class Main implements ModInitializer {
         EventBus.subscribe(this.deathmatchTabCleaner);
         EventBus.subscribe(this.localDisguiseSync);
         EventBus.subscribe(this.remoteDisguiseSync);
+        EventBus.subscribe(this.partySpamCommand);
         EventBus.subscribe(new UnknownNickFinder());
         EventBus.subscribe(new AskForLootOverlayProxy());
         EventBus.subscribe(new KillEffectCommand());
@@ -178,6 +181,7 @@ public class Main implements ModInitializer {
             count += registerCommand("apikeyexpireddebug", new me.napim.gomod.command.ApiKeyExpiredDebugCommand());
             count += registerCommand("forcepig", new ForcePigCommand());
             count += registerCommand("forceres", new me.napim.gomod.command.ForceResCommand());
+            count += registerCommand("npcskin", new me.napim.gomod.command.NpcSkinDebugCommand());
             count += registerCommand("forceblitzhour", new me.napim.gomod.command.ForceBlitzHourCommand());
             count += registerCommand("visiblespecs", new VisibleSpectatorCommand());
             if (GomodFixes.isWeaveRuntime()) {

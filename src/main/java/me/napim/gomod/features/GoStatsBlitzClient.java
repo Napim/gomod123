@@ -22,9 +22,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Small client for the read-only Blitz details route exposed by GoStats. */
@@ -89,6 +91,7 @@ public final class GoStatsBlitzClient {
                     Snapshot shared = fetchFromGoStats(normalized, 2000);
                     long at = java.time.OffsetDateTime.parse(shared.fetchedAt).toInstant().toEpochMilli();
                     if (System.currentTimeMillis() - at <= HypixelPlayerDataCache.FRESH_FOR_MS) {
+                        shared = mergeRichFields(shared, lastGoodSnapshot);
                         cacheSuccess(normalized, shared);
                         return shared;
                     }
@@ -215,6 +218,14 @@ public final class GoStatsBlitzClient {
         savePersistedCache(normalized, entry);
     }
 
+    /** Returns the latest in-memory cached snapshot for this UUID, preserving its freshness flag. */
+    public static Snapshot getCachedSnapshot(String uuid) {
+        String normalized = normalizeUuid(uuid);
+        if (normalized.isEmpty()) return null;
+        CacheEntry entry = PLAYER_CACHE.get(normalized);
+        return entry == null ? null : entry.snapshot;
+    }
+
     private static void cacheFailure(String normalized, String message, Snapshot snapshot, long snapshotCachedAt) {
         PLAYER_CACHE.put(normalized, new CacheEntry(snapshot, message, snapshotCachedAt, System.currentTimeMillis()));
     }
@@ -257,7 +268,11 @@ public final class GoStatsBlitzClient {
                     number(data, "solo_wins"), number(data, "team_wins"), number(data, "wins"),
                     number(data, "games"), number(data, "coins"), number(data, "time_played"),
                     decimal(data, "kd"), decimal(data, "wlr"), decimal(data, "win_rate"), kits,
-                    Cosmetics.parse(object(data, "cosmetics")));
+                    Cosmetics.parse(object(data, "cosmetics")),
+                    BlitzSettings.parse(object(data, "blitz_settings")),
+                    PlayerInfo.parse(object(data, "player_info")),
+                    TournamentStats.parseList(array(data, "tournaments")),
+                    KitExtraStat.parseList(array(data, "kit_extra_stats")));
             snapshot.overallActivity = ActivitySummary.parse(object(data, "activity"));
             if (cachedAt <= 0L || snapshot.kits.isEmpty() && snapshot.kills == 0L
                     && snapshot.wins == 0L && snapshot.games == 0L) return null;
@@ -312,6 +327,18 @@ public final class GoStatsBlitzClient {
         data.addProperty("wlr", snapshot.wlr);
         data.addProperty("win_rate", snapshot.winRate);
         data.add("cosmetics", snapshot.cosmetics.toJson());
+        data.add("blitz_settings", snapshot.blitzSettings.toJson());
+        data.add("player_info", snapshot.playerInfo.toJson());
+        JsonArray tournaments = new JsonArray();
+        for (TournamentStats entry : snapshot.tournaments) {
+            tournaments.add(entry.toJson());
+        }
+        data.add("tournaments", tournaments);
+        JsonArray kitExtraStats = new JsonArray();
+        for (KitExtraStat entry : snapshot.kitExtraStats) {
+            kitExtraStats.add(entry.toJson());
+        }
+        data.add("kit_extra_stats", kitExtraStats);
         data.add("activity", snapshot.overallActivity.toJson());
         JsonArray kits = new JsonArray();
         for (Kit kit : snapshot.kits) {
@@ -436,11 +463,36 @@ public final class GoStatsBlitzClient {
         return result;
     }
 
+    /** Preserves rich Hypixel-only profile sections (playerInfo, blitzSettings, activity) if missing on primary. */
+    public static Snapshot mergeRichFields(Snapshot primary, Snapshot fallback) {
+        if (primary == null) return fallback;
+        if (fallback == null) return primary;
+        BlitzSettings settings = primary.blitzSettings != null && primary.blitzSettings.isAvailable()
+                ? primary.blitzSettings : fallback.blitzSettings;
+        PlayerInfo info = primary.playerInfo != null && primary.playerInfo.isAvailable()
+                ? primary.playerInfo : fallback.playerInfo;
+        ActivitySummary activity = primary.overallActivity != null && primary.overallActivity.isAvailable()
+                ? primary.overallActivity : fallback.overallActivity;
+        if (settings == primary.blitzSettings && info == primary.playerInfo && activity == primary.overallActivity) {
+            return primary;
+        }
+        Snapshot merged = new Snapshot(primary.username, primary.uuid, primary.fetchedAt, primary.lastChecked,
+                primary.kills, primary.soloKills, primary.teamKills, primary.deaths, primary.soloWins,
+                primary.teamWins, primary.wins, primary.games, primary.coins, primary.timePlayedSeconds,
+                primary.kd, primary.wlr, primary.winRate, primary.kits, primary.cosmetics,
+                settings, info, primary.tournaments, primary.kitExtraStats);
+        merged.overallActivity = activity;
+        merged.cached = primary.cached;
+        merged.cacheSource = primary.cacheSource;
+        return merged;
+    }
+
     private static Snapshot withKits(Snapshot base, List<Kit> kits) {
         Snapshot result = new Snapshot(base.username, base.uuid, base.fetchedAt, base.lastChecked,
                 base.kills, base.soloKills, base.teamKills, base.deaths, base.soloWins,
                 base.teamWins, base.wins, base.games, base.coins, base.timePlayedSeconds,
-                base.kd, base.wlr, base.winRate, kits, base.cosmetics);
+                base.kd, base.wlr, base.winRate, kits, base.cosmetics,
+                base.blitzSettings, base.playerInfo, base.tournaments, base.kitExtraStats);
         result.overallActivity = base.overallActivity;
         result.cached = base.cached;
         result.cacheSource = base.cacheSource;
@@ -476,13 +528,28 @@ public final class GoStatsBlitzClient {
     }
 
     public static List<Kit> sortedKits(List<Kit> source, boolean recent) {
+        return sortedKits(source, recent, true);
+    }
+
+    /**
+     * Sorts kits for Lifetime or Activity views.
+     * In Activity mode, {@code byRecency = true} orders by most recently active kit first
+     * (breaking same-window ties by games gained, then kills gained), while {@code byRecency = false}
+     * orders by highest gains first (breaking ties by most recent activity).
+     */
+    public static List<Kit> sortedKits(List<Kit> source, boolean recent, boolean byRecency) {
         List<Kit> result = new ArrayList<Kit>(source);
-        Comparator<Kit> order = Comparator.comparingLong(Kit::getKills).reversed()
+        Comparator<Kit> lifetimeOrder = Comparator.comparingLong(Kit::getKills).reversed()
                 .thenComparing(kit -> kit.name, String.CASE_INSENSITIVE_ORDER);
+        Comparator<Kit> order = lifetimeOrder;
         if (recent) {
-            order = Comparator.comparingLong((Kit kit) -> kit.activity.games).reversed()
+            Comparator<Kit> recency = Comparator.comparingLong((Kit kit) -> kit.lastActivityAt).reversed();
+            Comparator<Kit> gains = Comparator.comparingLong((Kit kit) -> kit.activity.games).reversed()
                     .thenComparing(Comparator.comparingLong((Kit kit) -> kit.activity.kills).reversed())
-                    .thenComparing(order);
+                    .thenComparing(Comparator.comparingLong((Kit kit) -> kit.activity.wins).reversed());
+            order = byRecency
+                    ? recency.thenComparing(gains).thenComparing(lifetimeOrder)
+                    : gains.thenComparing(recency).thenComparing(lifetimeOrder);
         }
         Collections.sort(result, order);
         return result;
@@ -604,10 +671,19 @@ public final class GoStatsBlitzClient {
         Snapshot result = new Snapshot(username, uuid, observedTime, observedTime,
                 kills, soloKills, teamKills, deaths, soloWins, teamWins, wins, games,
                 coins, timePlayed, kd, wlr, winRate, parseHypixelKits(blitz),
-                Cosmetics.fromBlitz(blitz));
+                Cosmetics.fromBlitz(blitz),
+                BlitzSettings.fromBlitz(blitz),
+                PlayerInfo.fromPlayer(player),
+                TournamentStats.parseAll(blitz),
+                KitExtraStat.parseAll(blitz));
         result.cached = HypixelPlayerRequests.isCached(player);
         result.cacheSource = HypixelPlayerRequests.source(player);
         return result;
+    }
+
+    /** Package-private helper for unit tests verifying Hypixel response parsing. */
+    static Snapshot parseHypixelPlayerForTest(String uuid, JsonObject root) throws Exception {
+        return parseHypixelPlayerResponse(uuid, root);
     }
 
     /** True while the same player's live Hypixel lookup is inside its one-minute cooldown. */
@@ -762,6 +838,7 @@ public final class GoStatsBlitzClient {
                     Activity.parse(kitStats)));
         }
         Collections.sort(kits, Comparator.comparingLong(Kit::getKills).reversed());
+        JsonObject rawStats = object(root, "raw_stats");
         Snapshot snapshot = new Snapshot(
                 string(root, "username", "Unknown"),
                 string(root, "uuid", fallbackUuid),
@@ -781,7 +858,11 @@ public final class GoStatsBlitzClient {
                 decimal(stats, "wlr"),
                 decimal(stats, "win_rate"),
                 kits,
-                Cosmetics.fromBlitz(object(root, "raw_stats"), object(root, "cosmetics")));
+                Cosmetics.fromBlitz(rawStats, object(root, "cosmetics")),
+                BlitzSettings.fromBlitz(rawStats),
+                PlayerInfo.fromPlayer(object(root, "profile")),
+                TournamentStats.parseAll(rawStats),
+                KitExtraStat.parseAll(rawStats));
         snapshot.overallActivity = ActivitySummary.parse(object(root, "activity"));
         return snapshot;
     }
@@ -832,6 +913,22 @@ public final class GoStatsBlitzClient {
                 String text = value.getAsString();
                 if ("1".equals(text) || "true".equalsIgnoreCase(text)) return Boolean.TRUE;
                 if ("0".equals(text) || "false".equalsIgnoreCase(text)) return Boolean.FALSE;
+            } catch (Exception ignored) {
+            }
+        }
+        return null;
+    }
+
+    private static Integer optionalInt(JsonObject object, String... keys) {
+        if (object == null) return null;
+        for (String key : keys) {
+            try {
+                JsonElement value = object.get(key);
+                if (value == null || value.isJsonNull()) continue;
+                if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()) {
+                    return value.getAsBoolean() ? Integer.valueOf(1) : Integer.valueOf(0);
+                }
+                return Integer.valueOf(value.getAsInt());
             } catch (Exception ignored) {
             }
         }
@@ -929,6 +1026,445 @@ public final class GoStatsBlitzClient {
         }
     }
 
+    public static final class BlitzSettings {
+        public static final BlitzSettings UNKNOWN = new BlitzSettings(null, null, null, null, null, Collections.<String, String>emptyMap());
+        public final Boolean autoArmor;
+        public final Integer toggleKillCounter;
+        public final Boolean altKillMessages;
+        public final Boolean altKillMessagesUnlocked;
+        public final Boolean disablePrestigeFinisher;
+        public final Map<String, String> privateGames;
+
+        private BlitzSettings(Boolean autoArmor, Integer toggleKillCounter, Boolean altKillMessages,
+                              Boolean altKillMessagesUnlocked, Boolean disablePrestigeFinisher,
+                              Map<String, String> privateGames) {
+            this.autoArmor = autoArmor;
+            this.toggleKillCounter = toggleKillCounter;
+            this.altKillMessages = altKillMessages;
+            this.altKillMessagesUnlocked = altKillMessagesUnlocked;
+            this.disablePrestigeFinisher = disablePrestigeFinisher;
+            this.privateGames = privateGames == null || privateGames.isEmpty()
+                    ? Collections.<String, String>emptyMap()
+                    : Collections.unmodifiableMap(new LinkedHashMap<String, String>(privateGames));
+        }
+
+        public boolean isAvailable() {
+            return autoArmor != null || toggleKillCounter != null || altKillMessages != null
+                    || altKillMessagesUnlocked != null || disablePrestigeFinisher != null || !privateGames.isEmpty();
+        }
+
+        private static boolean hasPackage(JsonObject blitz, String packageName) {
+            JsonArray packages = array(blitz, "packages");
+            for (JsonElement element : packages) {
+                if (element == null || element.isJsonNull()) continue;
+                try {
+                    if (packageName.equalsIgnoreCase(element.getAsString().trim())) return true;
+                } catch (Exception ignored) { }
+            }
+            return false;
+        }
+
+        private static BlitzSettings fromBlitz(JsonObject blitz) {
+            if (blitz == null || blitz.entrySet().isEmpty()) return UNKNOWN;
+            Boolean autoArmor = optionalBoolean(blitz, "autoarmor");
+            Integer toggleKillCounter = optionalInt(blitz, "togglekillcounter");
+            if (toggleKillCounter == null) {
+                // Hypixel enables the Blitz kill counter by default and only writes togglekillcounter after toggling.
+                toggleKillCounter = Integer.valueOf(1);
+            }
+            Boolean altKillMessages = optionalBoolean(blitz, "alternative_kill_message_enabled");
+            Boolean altKillMessagesUnlocked = altKillMessages != null || hasPackage(blitz, "alternative_kill_message_unlocked")
+                    ? Boolean.TRUE : Boolean.FALSE;
+            Boolean disablePrestigeFinisher = optionalBoolean(blitz, "disableprestigefinisher");
+            Map<String, String> privateGames = new LinkedHashMap<String, String>();
+            JsonObject pg = object(blitz, "privategames");
+            for (Map.Entry<String, JsonElement> entry : pg.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().isJsonNull()) continue;
+                try {
+                    privateGames.put(entry.getKey(), entry.getValue().getAsString());
+                } catch (Exception ignored) { }
+            }
+            if (autoArmor == null && toggleKillCounter == null && altKillMessages == null
+                    && altKillMessagesUnlocked == null && disablePrestigeFinisher == null && privateGames.isEmpty()) {
+                return UNKNOWN;
+            }
+            return new BlitzSettings(autoArmor, toggleKillCounter, altKillMessages,
+                    altKillMessagesUnlocked, disablePrestigeFinisher, privateGames);
+        }
+
+        private static BlitzSettings parse(JsonObject data) {
+            if (data == null || data.entrySet().isEmpty()) return UNKNOWN;
+            Boolean autoArmor = optionalBoolean(data, "auto_armor");
+            Integer toggleKillCounter = optionalInt(data, "toggle_kill_counter");
+            Boolean altKillMessages = optionalBoolean(data, "alt_kill_messages");
+            Boolean altKillMessagesUnlocked = optionalBoolean(data, "alt_kill_messages_unlocked");
+            if (altKillMessagesUnlocked == null && altKillMessages != null) {
+                altKillMessagesUnlocked = Boolean.TRUE;
+            }
+            Boolean disablePrestigeFinisher = optionalBoolean(data, "disable_prestige_finisher");
+            Map<String, String> privateGames = new LinkedHashMap<String, String>();
+            JsonObject pg = object(data, "private_games");
+            for (Map.Entry<String, JsonElement> entry : pg.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().isJsonNull()) continue;
+                try {
+                    privateGames.put(entry.getKey(), entry.getValue().getAsString());
+                } catch (Exception ignored) { }
+            }
+            if (autoArmor == null && toggleKillCounter == null && altKillMessages == null
+                    && altKillMessagesUnlocked == null && disablePrestigeFinisher == null && privateGames.isEmpty()) {
+                return UNKNOWN;
+            }
+            return new BlitzSettings(autoArmor, toggleKillCounter, altKillMessages,
+                    altKillMessagesUnlocked, disablePrestigeFinisher, privateGames);
+        }
+
+        private JsonObject toJson() {
+            JsonObject data = new JsonObject();
+            if (autoArmor != null) data.addProperty("auto_armor", autoArmor.booleanValue());
+            if (toggleKillCounter != null) data.addProperty("toggle_kill_counter", toggleKillCounter.intValue());
+            if (altKillMessages != null) data.addProperty("alt_kill_messages", altKillMessages.booleanValue());
+            if (altKillMessagesUnlocked != null) data.addProperty("alt_kill_messages_unlocked", altKillMessagesUnlocked.booleanValue());
+            if (disablePrestigeFinisher != null) data.addProperty("disable_prestige_finisher", disablePrestigeFinisher.booleanValue());
+            if (!privateGames.isEmpty()) {
+                JsonObject pg = new JsonObject();
+                for (Map.Entry<String, String> entry : privateGames.entrySet()) {
+                    pg.addProperty(entry.getKey(), entry.getValue());
+                }
+                data.add("private_games", pg);
+            }
+            return data;
+        }
+    }
+
+    public static final class PlayerInfo {
+        public static final PlayerInfo UNKNOWN = new PlayerInfo(
+                Collections.<String, String>emptyMap(), -1L, "", null, null);
+        public final Map<String, String> socialLinks;
+        public final long blitzParkourBestMs;
+        public final String userLanguage;
+        public final Boolean autoActivateQuests;
+        public final Boolean lobbyPlayersVisible;
+
+        private PlayerInfo(Map<String, String> socialLinks, long blitzParkourBestMs, String userLanguage,
+                           Boolean autoActivateQuests, Boolean lobbyPlayersVisible) {
+            this.socialLinks = socialLinks == null || socialLinks.isEmpty()
+                    ? Collections.<String, String>emptyMap()
+                    : Collections.unmodifiableMap(new LinkedHashMap<String, String>(socialLinks));
+            this.blitzParkourBestMs = blitzParkourBestMs;
+            this.userLanguage = userLanguage == null ? "" : userLanguage.trim();
+            this.autoActivateQuests = autoActivateQuests;
+            this.lobbyPlayersVisible = lobbyPlayersVisible;
+        }
+
+        public boolean isAvailable() {
+            return !socialLinks.isEmpty() || blitzParkourBestMs >= 0L || !userLanguage.isEmpty()
+                    || autoActivateQuests != null || lobbyPlayersVisible != null;
+        }
+
+        private static PlayerInfo fromPlayer(JsonObject player) {
+            if (player == null || player.entrySet().isEmpty()) return UNKNOWN;
+            Map<String, String> links = new LinkedHashMap<String, String>();
+            JsonObject socialMedia = object(player, "socialMedia");
+            JsonObject linksObj = object(socialMedia, "links");
+            for (Map.Entry<String, JsonElement> entry : linksObj.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().isJsonNull()) continue;
+                try {
+                    String val = entry.getValue().getAsString().trim();
+                    if (!val.isEmpty()) links.put(entry.getKey(), val);
+                } catch (Exception ignored) { }
+            }
+            long parkourBest = -1L;
+            JsonObject parkour = object(player, "parkourCompletions");
+            JsonArray blitzParkour = array(parkour, "BlitzLobby");
+            for (JsonElement element : blitzParkour) {
+                if (!element.isJsonObject()) continue;
+                long took = number(element.getAsJsonObject(), "timeTook");
+                if (took > 0L && (parkourBest < 0L || took < parkourBest)) {
+                    parkourBest = took;
+                }
+            }
+            String lang = string(player, "userLanguage", "");
+            if (lang.isEmpty()) lang = string(player, "language", "");
+            JsonObject questSettings = object(player, "questSettings");
+            Boolean autoQuest = optionalBoolean(questSettings, "autoActivate");
+            Boolean clock = optionalBoolean(player, "clock");
+            if (links.isEmpty() && parkourBest < 0L && lang.isEmpty() && autoQuest == null && clock == null) {
+                return UNKNOWN;
+            }
+            return new PlayerInfo(links, parkourBest, lang, autoQuest, clock);
+        }
+
+        private static PlayerInfo parse(JsonObject data) {
+            if (data == null || data.entrySet().isEmpty()) return UNKNOWN;
+            Map<String, String> links = new LinkedHashMap<String, String>();
+            JsonObject linksObj = object(data, "social_links");
+            for (Map.Entry<String, JsonElement> entry : linksObj.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().isJsonNull()) continue;
+                try {
+                    String val = entry.getValue().getAsString().trim();
+                    if (!val.isEmpty()) links.put(entry.getKey(), val);
+                } catch (Exception ignored) { }
+            }
+            long parkourBest = hasKey(data, "blitz_parkour_best_ms") ? number(data, "blitz_parkour_best_ms") : -1L;
+            String lang = string(data, "user_language", "");
+            Boolean autoQuest = optionalBoolean(data, "auto_activate_quests");
+            Boolean clock = optionalBoolean(data, "lobby_players_visible");
+            if (links.isEmpty() && parkourBest < 0L && lang.isEmpty() && autoQuest == null && clock == null) {
+                return UNKNOWN;
+            }
+            return new PlayerInfo(links, parkourBest, lang, autoQuest, clock);
+        }
+
+        private JsonObject toJson() {
+            JsonObject data = new JsonObject();
+            if (!socialLinks.isEmpty()) {
+                JsonObject linksObj = new JsonObject();
+                for (Map.Entry<String, String> entry : socialLinks.entrySet()) {
+                    linksObj.addProperty(entry.getKey(), entry.getValue());
+                }
+                data.add("social_links", linksObj);
+            }
+            if (blitzParkourBestMs >= 0L) data.addProperty("blitz_parkour_best_ms", blitzParkourBestMs);
+            if (!userLanguage.isEmpty()) data.addProperty("user_language", userLanguage);
+            if (autoActivateQuests != null) data.addProperty("auto_activate_quests", autoActivateQuests.booleanValue());
+            if (lobbyPlayersVisible != null) data.addProperty("lobby_players_visible", lobbyPlayersVisible.booleanValue());
+            return data;
+        }
+    }
+
+    public static final class TournamentStats {
+        public final String name;
+        public final String date;
+        public final long kills;
+        public final long deaths;
+        public final long wins;
+        public final long games;
+        public final long timePlayedSeconds;
+        public final long blitzUses;
+        public final String topKit;
+
+        private TournamentStats(String name, String date, long kills, long deaths, long wins, long games,
+                                long timePlayedSeconds, long blitzUses, String topKit) {
+            this.name = name == null ? "" : name;
+            this.date = date == null ? "" : date;
+            this.kills = kills;
+            this.deaths = deaths;
+            this.wins = wins;
+            this.games = games;
+            this.timePlayedSeconds = timePlayedSeconds;
+            this.blitzUses = blitzUses;
+            this.topKit = topKit == null ? "" : topKit;
+        }
+
+        public double kd() {
+            return deaths > 0L ? (double) kills / (double) deaths : kills;
+        }
+
+        public double wlr() {
+            return deaths > 0L ? (double) wins / (double) deaths : wins;
+        }
+
+        public String date() {
+            return date;
+        }
+
+        public boolean played() {
+            return kills > 0L || deaths > 0L || wins > 0L || games > 0L;
+        }
+
+        /** Returns all three historical Blitz Duo tournaments in chronological order, plus any additional ones. */
+        public static List<TournamentStats> withKnownPlaceholders(List<TournamentStats> existing) {
+            String[] knownDates = {"Jan 4-6, 2019", "Oct 16-18, 2020", "Mar 24-26, 2023"};
+            List<TournamentStats> result = new ArrayList<TournamentStats>(knownDates.length);
+            List<TournamentStats> extras = new ArrayList<TournamentStats>();
+            Map<String, TournamentStats> byDate = new LinkedHashMap<String, TournamentStats>();
+            if (existing != null) {
+                for (TournamentStats entry : existing) {
+                    if (entry == null) continue;
+                    if (!entry.date.isEmpty() && !byDate.containsKey(entry.date)) {
+                        byDate.put(entry.date, entry);
+                    } else {
+                        extras.add(entry);
+                    }
+                }
+            }
+            for (String knownDate : knownDates) {
+                TournamentStats match = byDate.remove(knownDate);
+                if (match != null) {
+                    result.add(match);
+                } else {
+                    result.add(new TournamentStats("Blitz Duo", knownDate, 0L, 0L, 0L, 0L, 0L, 0L, ""));
+                }
+            }
+            result.addAll(byDate.values());
+            result.addAll(extras);
+            return result;
+        }
+
+        /** Hypixel's tourney_blitz_duo_<n> keys are 0-indexed (0 = Jan 2019, 1 = Oct 2020, 2 = Mar 2023). */
+        private static String dateForIndex(String num) {
+            if ("0".equals(num)) return "Jan 4-6, 2019";
+            if ("1".equals(num)) return "Oct 16-18, 2020";
+            if ("2".equals(num)) return "Mar 24-26, 2023";
+            return "";
+        }
+
+        private static String nameForIndex(String num) {
+            if ("0".equals(num) || "1".equals(num) || "2".equals(num)) {
+                return "Blitz Duo";
+            }
+            try {
+                int edition = Integer.parseInt(num) + 1;
+                return "Blitz Duo (Edition " + edition + ")";
+            } catch (Exception ignored) {
+                return "Blitz Duo";
+            }
+        }
+
+        private static List<TournamentStats> parseAll(JsonObject blitz) {
+            if (blitz == null || blitz.entrySet().isEmpty()) return Collections.emptyList();
+            TreeSet<String> prefixes = new TreeSet<String>();
+            for (Map.Entry<String, JsonElement> entry : blitz.entrySet()) {
+                String key = entry.getKey();
+                if (!key.startsWith("tourney_blitz_duo_")) continue;
+                int start = "tourney_blitz_duo_".length();
+                int nextUnderscore = key.indexOf('_', start);
+                if (nextUnderscore > start) {
+                    prefixes.add(key.substring(0, nextUnderscore + 1));
+                }
+            }
+            if (prefixes.isEmpty()) return Collections.emptyList();
+            List<TournamentStats> result = new ArrayList<TournamentStats>(prefixes.size());
+            for (String prefix : prefixes) {
+                String num = prefix.substring("tourney_blitz_duo_".length(), prefix.length() - 1);
+                long kills = numberAny(blitz, prefix + "kills");
+                long deaths = numberAny(blitz, prefix + "deaths");
+                long wins = numberAny(blitz, prefix + "wins_teams", prefix + "wins_teams_normal", prefix + "wins");
+                long games = numberAny(blitz, prefix + "games_played");
+                long timePlayed = numberAny(blitz, prefix + "time_played");
+                long blitzUses = numberAny(blitz, prefix + "blitz_uses");
+                if (kills == 0L && deaths == 0L && wins == 0L && games == 0L) continue;
+                String topKit = "";
+                long topKitScore = -1L;
+                String killsPrefix = prefix + "kills_";
+                for (Map.Entry<String, JsonElement> entry : blitz.entrySet()) {
+                    String k = entry.getKey();
+                    if (!k.startsWith(killsPrefix)) continue;
+                    String suffix = k.substring(killsPrefix.length());
+                    if ("teams_normal".equals(suffix) || "teams".equals(suffix) || "solo".equals(suffix)
+                            || "solo_normal".equals(suffix) || "random".equals(suffix)) continue;
+                    long val = number(blitz, k);
+                    if (val > topKitScore) {
+                        topKitScore = val;
+                        topKit = displayKitName(suffix);
+                    }
+                }
+                result.add(new TournamentStats(nameForIndex(num), dateForIndex(num), kills, deaths, wins, games,
+                        timePlayed, blitzUses, topKit));
+            }
+            return result;
+        }
+
+        private static List<TournamentStats> parseList(JsonArray array) {
+            if (array == null || array.size() == 0) return Collections.emptyList();
+            List<TournamentStats> result = new ArrayList<TournamentStats>(array.size());
+            for (JsonElement element : array) {
+                if (!element.isJsonObject()) continue;
+                JsonObject obj = element.getAsJsonObject();
+                String rawName = string(obj, "name", "Blitz Duo");
+                String parsedDate = string(obj, "date", "");
+                // Upgrade legacy cached entries stored as "Blitz Duo #0"/"#1"/"#2".
+                if (parsedDate.isEmpty() && rawName.startsWith("Blitz Duo #")) {
+                    String idx = rawName.substring("Blitz Duo #".length()).trim();
+                    parsedDate = dateForIndex(idx);
+                    rawName = nameForIndex(idx);
+                }
+                result.add(new TournamentStats(
+                        rawName, parsedDate,
+                        number(obj, "kills"), number(obj, "deaths"), number(obj, "wins"),
+                        number(obj, "games"), number(obj, "time_played"),
+                        number(obj, "blitz_uses"), string(obj, "top_kit", "")));
+            }
+            return result;
+        }
+
+        private JsonObject toJson() {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("name", name);
+            if (!date.isEmpty()) obj.addProperty("date", date);
+            obj.addProperty("kills", kills);
+            obj.addProperty("deaths", deaths);
+            obj.addProperty("wins", wins);
+            obj.addProperty("games", games);
+            obj.addProperty("time_played", timePlayedSeconds);
+            obj.addProperty("blitz_uses", blitzUses);
+            if (!topKit.isEmpty()) obj.addProperty("top_kit", topKit);
+            return obj;
+        }
+    }
+
+    public static final class KitExtraStat {
+        private static final String[][] DEFINITIONS = {
+                {"tnt_placed_creepertamer", "Creepertamer", "TNT Placed"},
+                {"explosive_kills_creepertamer", "Creepertamer", "Explosive Kills"},
+                {"fall_kills_rogue", "Rogue", "Fall Kills"},
+                {"eggs_collected_farmer", "Farmer", "Eggs Collected"},
+                {"eggs_thrown_farmer", "Farmer", "Eggs Thrown"},
+                {"rails_placed_hype train", "Hype Train", "Rails Placed"},
+                {"tnt_placed_hype train", "Hype Train", "TNT Placed"},
+                {"blocks_traveled_minecart_hype train", "Hype Train", "Minecart Blocks"},
+                {"blocks_traveled_horse_horsetamer", "Horsetamer", "Horse Blocks"},
+                {"blocks_traveled_boat_viking", "Viking", "Boat Blocks"},
+                {"blocks_traveled_pig_meatmaster", "Meatmaster", "Pig Blocks"},
+                {"bottles_thrown_tim", "Tim", "XP Bottles Thrown"},
+                {"items_enchanted_tim", "Tim", "Items Enchanted"},
+                {"snowballs_thrown_snowman", "Snowman", "Snowballs Thrown"}
+        };
+        public final String kit;
+        public final String label;
+        public final long value;
+
+        private KitExtraStat(String kit, String label, long value) {
+            this.kit = kit == null ? "" : kit;
+            this.label = label == null ? "" : label;
+            this.value = value;
+        }
+
+        private static List<KitExtraStat> parseAll(JsonObject blitz) {
+            if (blitz == null || blitz.entrySet().isEmpty()) return Collections.emptyList();
+            List<KitExtraStat> result = new ArrayList<KitExtraStat>();
+            for (String[] def : DEFINITIONS) {
+                long value = number(blitz, def[0]);
+                if (value > 0L) {
+                    result.add(new KitExtraStat(def[1], def[2], value));
+                }
+            }
+            return result;
+        }
+
+        private static List<KitExtraStat> parseList(JsonArray array) {
+            if (array == null || array.size() == 0) return Collections.emptyList();
+            List<KitExtraStat> result = new ArrayList<KitExtraStat>(array.size());
+            for (JsonElement element : array) {
+                if (!element.isJsonObject()) continue;
+                JsonObject obj = element.getAsJsonObject();
+                long value = number(obj, "value");
+                if (value > 0L) {
+                    result.add(new KitExtraStat(string(obj, "kit", ""), string(obj, "label", ""), value));
+                }
+            }
+            return result;
+        }
+
+        private JsonObject toJson() {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("kit", kit);
+            obj.addProperty("label", label);
+            obj.addProperty("value", value);
+            return obj;
+        }
+    }
+
     public static final class Snapshot {
         public boolean cached = true;
         public String cacheSource = "gostats123 database";
@@ -962,6 +1498,10 @@ public final class GoStatsBlitzClient {
         public final double winRate;
         public final List<Kit> kits;
         public final Cosmetics cosmetics;
+        public final BlitzSettings blitzSettings;
+        public final PlayerInfo playerInfo;
+        public final List<TournamentStats> tournaments;
+        public final List<KitExtraStat> kitExtraStats;
         public ActivitySummary overallActivity = ActivitySummary.UNKNOWN;
 
         private Snapshot(String username, String uuid, String fetchedAt, String lastChecked,
@@ -970,14 +1510,17 @@ public final class GoStatsBlitzClient {
                          long timePlayedSeconds, double kd, double wlr, double winRate, List<Kit> kits) {
             this(username, uuid, fetchedAt, lastChecked, kills, soloKills, teamKills, deaths,
                     soloWins, teamWins, wins, games, coins, timePlayedSeconds, kd, wlr,
-                    winRate, kits, Cosmetics.UNKNOWN);
+                    winRate, kits, Cosmetics.UNKNOWN, BlitzSettings.UNKNOWN, PlayerInfo.UNKNOWN,
+                    Collections.<TournamentStats>emptyList(), Collections.<KitExtraStat>emptyList());
         }
 
         private Snapshot(String username, String uuid, String fetchedAt, String lastChecked,
                          long kills, long soloKills, long teamKills, long deaths,
                          long soloWins, long teamWins, long wins, long games, long coins,
                          long timePlayedSeconds, double kd, double wlr, double winRate,
-                         List<Kit> kits, Cosmetics cosmetics) {
+                         List<Kit> kits, Cosmetics cosmetics, BlitzSettings blitzSettings,
+                         PlayerInfo playerInfo, List<TournamentStats> tournaments,
+                         List<KitExtraStat> kitExtraStats) {
             this.username = username;
             this.uuid = uuid;
             this.fetchedAt = fetchedAt;
@@ -997,6 +1540,14 @@ public final class GoStatsBlitzClient {
             this.winRate = winRate;
             this.kits = Collections.unmodifiableList(new ArrayList<Kit>(kits));
             this.cosmetics = cosmetics == null ? Cosmetics.UNKNOWN : cosmetics;
+            this.blitzSettings = blitzSettings == null ? BlitzSettings.UNKNOWN : blitzSettings;
+            this.playerInfo = playerInfo == null ? PlayerInfo.UNKNOWN : playerInfo;
+            this.tournaments = tournaments == null || tournaments.isEmpty()
+                    ? Collections.<TournamentStats>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<TournamentStats>(tournaments));
+            this.kitExtraStats = kitExtraStats == null || kitExtraStats.isEmpty()
+                    ? Collections.<KitExtraStat>emptyList()
+                    : Collections.unmodifiableList(new ArrayList<KitExtraStat>(kitExtraStats));
         }
     }
 

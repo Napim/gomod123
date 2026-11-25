@@ -1344,8 +1344,22 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         applyFilters();
     }
 
+    private int loadingBelowSkeletonRows() {
+        if (players.isEmpty() || !loading || !"below".equalsIgnoreCase(pageLoadingDirection)) return 0;
+        int remaining = totalPlayers > nextOffset ? totalPlayers - nextOffset : 6;
+        return Math.max(1, Math.min(visibleRows, Math.min(6, remaining)));
+    }
+
+    private int loadingAboveSkeletonRows() {
+        if (players.isEmpty() || !loading || !"above".equalsIgnoreCase(pageLoadingDirection)
+                || loadedStartOffset <= 0 || scrollOffset > 0) {
+            return 0;
+        }
+        return Math.min(4, Math.min(loadedStartOffset, Math.max(1, visibleRows - 2)));
+    }
+
     private int maxScroll() {
-        return Math.max(0, players.size() - visibleRows);
+        return Math.max(0, players.size() + loadingBelowSkeletonRows() - visibleRows);
     }
 
     private int leaderboardRowHeight() {
@@ -1514,13 +1528,18 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         batchRefreshCompletedAt.clear();
         batchRefreshFailedAt.clear();
         String targetLabel = "kit".equals(currentScope()) ? appliedKit : currentScopeLabel();
-        refreshStatus = "Loading the first " + currentRefreshCount() + " " + targetLabel + " "
-                + currentSortLabel().toLowerCase(Locale.ROOT) + " players...";
-        layoutControls();
-
         List<GoStatsLeaderboardClient.Player> loadedTopPlayers = loadedStartOffset == 0
                 && !players.isEmpty() && players.get(0).rank == 1
                 ? new ArrayList<GoStatsLeaderboardClient.Player>(players) : null;
+        int plannedRefreshCount = totalPlayers > 0
+                ? Math.min(currentRefreshCount(), totalPlayers) : currentRefreshCount();
+        refreshStatus = loadedTopPlayers != null
+                ? "Starting updates for " + plannedRefreshCount + " " + targetLabel + " "
+                + currentSortLabel().toLowerCase(Locale.ROOT) + " players..."
+                : "Loading the first " + currentRefreshCount() + " " + targetLabel + " "
+                + currentSortLabel().toLowerCase(Locale.ROOT) + " players...";
+        layoutControls();
+
         GoStatsLeaderboardBatchRefresh.Job job = GoStatsLeaderboardBatchRefresh.start(this,
                 currentScope(), kitForCurrentQuery(),
                 currentMetric(), currentRefreshCount(),
@@ -1572,10 +1591,37 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         loadedStartOffset = 0;
         nextOffset = players.size();
         loadError = null;
-        top350TargetCount = topPlayers == null ? 0 : topPlayers.size();
+        int loadedCount = topPlayers == null ? 0 : topPlayers.size();
+        top350TargetCount = totalPlayers > 0
+                ? Math.max(loadedCount, Math.min(currentRefreshCount(), totalPlayers))
+                : loadedCount;
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll()));
-        refreshStatus = "Starting updates for " + top350TargetCount + " players sorted by "
-                + currentSortLabel().toLowerCase(Locale.ROOT) + "...";
+        if (top350Started == 0 && top350Completed == 0) {
+            refreshStatus = "Starting updates for " + top350TargetCount + " players sorted by "
+                    + currentSortLabel().toLowerCase(Locale.ROOT) + "...";
+        }
+        layoutControls();
+    }
+
+    @Override
+    public void onTop350PlayersAppended(long jobId, List<GoStatsLeaderboardClient.Player> appendedPlayers,
+                                        int totalTargets, int total) {
+        if (jobId != top350JobId || !top350Refreshing) return;
+        if (appendedPlayers != null) {
+            for (GoStatsLeaderboardClient.Player player : appendedPlayers) {
+                if (player == null) continue;
+                String key = player.uuid == null || player.uuid.isEmpty()
+                        ? player.username.toLowerCase(Locale.ROOT) : player.uuid;
+                if (seenUuids.add(key)) {
+                    players.add(player);
+                }
+            }
+        }
+        if (total > 0) {
+            totalPlayers = Math.max(totalPlayers, total);
+        }
+        nextOffset = Math.max(nextOffset, players.size());
+        top350TargetCount = Math.max(top350TargetCount, totalTargets);
         layoutControls();
     }
 
@@ -1584,6 +1630,7 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
                                       int started, int total) {
         if (jobId != top350JobId || !top350Refreshing || player == null) return;
         top350Started = started;
+        top350TargetCount = total;
         String uuid = normalizeLeaderboardUuid(player.uuid);
         manuallyRefreshedUuids.remove(uuid);
         batchRefreshCompletedAt.remove(uuid);
@@ -1599,6 +1646,7 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
                                         int completed, int total) {
         if (jobId != top350JobId || !top350Refreshing || previous == null) return;
         top350Completed = completed;
+        top350TargetCount = total;
         String uuid = normalizeLeaderboardUuid(previous.uuid);
         batchRefreshStartedAt.remove(uuid);
         if (error == null && updated != null) {
@@ -1714,8 +1762,10 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
             summary = NUMBER.format(totalPlayers) + " players tracked in the gostats123 database";
         } else if (loadError != null) {
             summary = "gostats123 is unavailable — click Refresh to try again";
+        } else if (loading) {
+            summary = "Loading players from gostats123" + loadingDots(System.currentTimeMillis());
         } else {
-            summary = "Loading players from gostats123...";
+            summary = "No matching players in the gostats123 database";
         }
         GoStatsLeaderboardSyncQueue.Status sync = GoStatsContributions.leaderboardSyncStatus();
         if (sync.hasActivity()) {
@@ -1873,12 +1923,32 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
                     metricCenter, headerY, MUTED);
         }
         Gui.drawRect(leftX, listTop - 4, rightX, listTop - 3, 0x60303A44);
+        if (loading && loadError == null
+                && (players.isEmpty() || "above".equalsIgnoreCase(pageLoadingDirection))) {
+            drawLoadingHeaderProgressBar(leftX, rightX, listTop - 4, System.currentTimeMillis());
+        }
         int visibleBottom = listBottom;
         hoveredPlayer = null;
-        for (int index = scrollOffset; index < end; index++) {
+        int rowHeight = leaderboardRowHeight();
+        boolean showKitLevelSlot = "kit".equals(currentScope())
+                && !"rambo".equalsIgnoreCase(appliedKit.trim());
+        int aboveSkeleton = loadingAboveSkeletonRows();
+        int belowSkeleton = loadingBelowSkeletonRows();
+        long nowMs = System.currentTimeMillis();
+        for (int slot = 0; slot < aboveSkeleton; slot++) {
+            int yPos = listTop + slot * rowHeight;
+            if (yPos + fontRendererObj.FONT_HEIGHT > visibleBottom) break;
+            float fade = aboveSkeleton > 1 ? 0.42F + 0.58F * ((slot + 1) / (float) aboveSkeleton) : 1.0F;
+            int estimatedRank = Math.max(1, loadedStartOffset - aboveSkeleton + slot + 1);
+            drawLeaderboardSkeletonRow(slot, estimatedRank - 1, yPos, fade, nowMs,
+                    listLeft, listRight, rankCenter, playerColumnLeft, playerColumnWidth,
+                    showKitLevelSlot, showOverallColumns, overallColumns, overallColumnsLeft,
+                    overallColumnWidths, metricCenter, metricColumnWidth);
+        }
+        int playerEnd = Math.min(players.size(), scrollOffset + Math.max(0, visibleRows - aboveSkeleton));
+        for (int index = scrollOffset; index < playerEnd; index++) {
             GoStatsLeaderboardClient.Player player = players.get(index);
-            int rowHeight = leaderboardRowHeight();
-            int yPos = listTop + (index - scrollOffset) * rowHeight;
+            int yPos = listTop + (aboveSkeleton + (index - scrollOffset)) * rowHeight;
             if (yPos + fontRendererObj.FONT_HEIGHT > visibleBottom) break;
             boolean hovered = openSelectorId == -1
                     && mouseX >= listLeft && mouseX <= listRight
@@ -1894,8 +1964,6 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
             int nameGapWidth = fontRendererObj.getStringWidth(" ");
             int headX = playerColumnLeft;
             int levelSlotX = headX + headSize + KIT_LEVEL_HEAD_GAP;
-            boolean showKitLevelSlot = "kit".equals(currentScope())
-                    && !"rambo".equalsIgnoreCase(appliedKit.trim());
             int levelSlotWidth = showKitLevelSlot ? KIT_LEVEL_MARKER_SLOT_WIDTH : 0;
             int levelX = levelSlotX + Math.max(0, (levelSlotWidth - kitLevelWidth) / 2);
             int nameAreaLeft;
@@ -1970,12 +2038,34 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
             }
         }
 
+        if (belowSkeleton > 0) {
+            int firstBelowSlot = aboveSkeleton + Math.max(0, players.size() - scrollOffset);
+            int belowEndIndex = players.size() + belowSkeleton;
+            for (int slot = Math.max(aboveSkeleton, firstBelowSlot); slot < visibleRows; slot++) {
+                int virtualIndex = scrollOffset + (slot - aboveSkeleton);
+                if (virtualIndex < players.size() || virtualIndex >= belowEndIndex) continue;
+                int yPos = listTop + slot * rowHeight;
+                if (yPos + fontRendererObj.FONT_HEIGHT > visibleBottom) break;
+                int skeletonOffset = virtualIndex - players.size();
+                float fade = belowSkeleton > 2 && skeletonOffset >= belowSkeleton - 2
+                        ? Math.max(0.32F, 1.0F - (skeletonOffset - (belowSkeleton - 3)) * 0.34F)
+                        : 1.0F;
+                drawLeaderboardSkeletonRow(slot, nextOffset + skeletonOffset, yPos, fade, nowMs,
+                        listLeft, listRight, rankCenter, playerColumnLeft, playerColumnWidth,
+                        showKitLevelSlot, showOverallColumns, overallColumns, overallColumnsLeft,
+                        overallColumnWidths, metricCenter, metricColumnWidth);
+            }
+        }
+
         if (players.isEmpty()) {
-            if (loadError == null) {
-                drawCenteredString(fontRendererObj, "Loading leaderboard results...",
-                        width / 2, listTop + 12, MUTED);
-            } else {
+            if (loadError != null) {
                 drawLeaderboardLoadError(width / 2);
+            } else if (loading) {
+                drawLeaderboardLoadingState(listLeft, listRight, rankCenter, playerColumnLeft,
+                        playerColumnWidth, showKitLevelSlot, showOverallColumns, overallColumns,
+                        overallColumnsLeft, overallColumnWidths, metricCenter, metricColumnWidth);
+            } else {
+                drawEmptyLeaderboardState(width / 2);
             }
         }
 
@@ -2025,7 +2115,8 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
 
     private void drawScrollbar(int listRight) {
         clampScroll();
-        int maxPossibleOffset = Math.max(0, players.size() - visibleRows);
+        int totalRows = players.size() + loadingBelowSkeletonRows();
+        int maxPossibleOffset = maxScroll();
         if (maxPossibleOffset == 0) {
             scrollbarLeft = scrollbarRight = scrollbarTrackTop = scrollbarTrackBottom = 0;
             scrollbarThumbTop = scrollbarThumbBottom = 0;
@@ -2037,7 +2128,7 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         int rowHeight = leaderboardRowHeight();
         scrollbarTrackBottom = Math.min(listBottom, listTop + visibleRows * rowHeight);
         int trackHeight = Math.max(1, scrollbarTrackBottom - scrollbarTrackTop);
-        int totalContentHeight = Math.max(1, players.size() * rowHeight);
+        int totalContentHeight = Math.max(1, totalRows * rowHeight);
         int thumbHeight = Math.max(20, (int) (trackHeight * Math.min(1.0F,
                 trackHeight / (float) totalContentHeight)));
         thumbHeight = Math.min(trackHeight, thumbHeight);
@@ -2047,6 +2138,195 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         scrollbarThumbBottom = scrollbarThumbTop + thumbHeight;
         Gui.drawRect(scrollbarLeft, scrollbarTrackTop, scrollbarRight, scrollbarTrackBottom, 0x60000000);
         Gui.drawRect(scrollbarLeft, scrollbarThumbTop, scrollbarRight, scrollbarThumbBottom, 0x90FFFFFF);
+    }
+
+    private static String loadingDots(long now) {
+        int count = 1 + (int) ((now / 420L) % 3L);
+        return count == 1 ? "." : count == 2 ? ".." : "...";
+    }
+
+    private void drawLoadingHeaderProgressBar(int leftX, int rightX, int y, long now) {
+        int span = rightX - leftX;
+        if (span <= 8) return;
+        float progress = ((now % 1400L) / 1400.0F);
+        int barWidth = Math.max(28, Math.min(96, span / 4));
+        int center = leftX - barWidth / 2 + (int) ((span + barWidth) * progress);
+        int barLeft = Math.max(leftX, center - barWidth / 2);
+        int barRight = Math.min(rightX, center + barWidth / 2);
+        if (barRight <= barLeft) return;
+        Gui.drawRect(barLeft, y, barRight, y + 1, 0x70FFD75A);
+        int coreInset = Math.max(4, (barRight - barLeft) / 4);
+        if (barRight - barLeft > coreInset * 2) {
+            Gui.drawRect(barLeft + coreInset, y, barRight - coreInset, y + 1, 0xE5FFD75A);
+        }
+    }
+
+    private void drawLeaderboardLoadingState(int listLeft, int listRight, int rankCenter,
+                                             int playerColumnLeft, int playerColumnWidth,
+                                             boolean showKitLevelSlot, boolean showOverallColumns,
+                                             List<String> overallColumns, int overallColumnsLeft,
+                                             int[] overallColumnWidths, int metricCenter,
+                                             int metricColumnWidth) {
+        long now = System.currentTimeMillis();
+        int rowHeight = leaderboardRowHeight();
+        int skeletonRows = Math.min(visibleRows, Math.max(1, (listBottom - listTop) / rowHeight));
+        for (int row = 0; row < skeletonRows; row++) {
+            int yPos = listTop + row * rowHeight;
+            if (yPos + fontRendererObj.FONT_HEIGHT > listBottom) break;
+            float rowFade = 1.0F;
+            if (skeletonRows > 5 && row >= skeletonRows - 4) {
+                float tail = (row - (skeletonRows - 5)) / 4.0F;
+                rowFade = Math.max(0.24F, 1.0F - tail * 0.72F);
+            }
+            drawLeaderboardSkeletonRow(row, row, yPos, rowFade, now,
+                    listLeft, listRight, rankCenter, playerColumnLeft, playerColumnWidth,
+                    showKitLevelSlot, showOverallColumns, overallColumns, overallColumnsLeft,
+                    overallColumnWidths, metricCenter, metricColumnWidth);
+        }
+    }
+
+    private void drawLeaderboardSkeletonRow(int visualSlot, int rankIndex, int yPos, float rowFade, long now,
+                                            int listLeft, int listRight, int rankCenter,
+                                            int playerColumnLeft, int playerColumnWidth,
+                                            boolean showKitLevelSlot, boolean showOverallColumns,
+                                            List<String> overallColumns, int overallColumnsLeft,
+                                            int[] overallColumnWidths, int metricCenter,
+                                            int metricColumnWidth) {
+        int tableSpan = Math.max(1, listRight - listLeft);
+        int[] nameWidths = {78, 96, 62, 88, 70, 104, 66, 84, 74, 92, 58, 82};
+        int[] metricPermille = {720, 660, 620, 700, 580, 650, 690, 600, 640, 570, 670, 610};
+        int patternIndex = Math.max(0, rankIndex);
+
+        int headSize = 10;
+        int levelSlotX = playerColumnLeft + headSize + KIT_LEVEL_HEAD_GAP;
+        int nameAreaLeft = showKitLevelSlot
+                ? levelSlotX + KIT_LEVEL_MARKER_SLOT_WIDTH + KIT_LEVEL_NAME_GAP
+                : playerColumnLeft + headSize + 5;
+        int nameAreaRight = playerColumnLeft + playerColumnWidth - 4;
+        int nameAreaWidth = Math.max(0, nameAreaRight - nameAreaLeft);
+
+        float rowShimmer = skeletonShimmerAt(now, 0.5F, visualSlot);
+        int rowBgAlpha = Math.max(8, Math.min(34,
+                (int) (((patternIndex % 2 == 0 ? 18.0F : 11.0F) + rowShimmer * 12.0F) * rowFade)));
+        Gui.drawRect(listLeft, yPos - 2, listRight, yPos + 10, (rowBgAlpha << 24) | 0x001E2833);
+
+        // Rank pill
+        int rankWidth = rankIndex >= 0 && rankIndex < 3 ? 16 : 18;
+        int rankLeft = rankCenter - rankWidth / 2;
+        int rankBaseRgb = rankIndex == 0 ? 0xB89638
+                : rankIndex == 1 ? 0x8F9AA6
+                : rankIndex == 2 ? 0x9F6E47 : 0x556577;
+        int rankHiRgb = rankIndex == 0 ? 0xFFE27A
+                : rankIndex == 1 ? 0xE2E8F0
+                : rankIndex == 2 ? 0xE2A978 : 0x8EA3B8;
+        float rankShimmer = skeletonShimmerAt(now, (rankCenter - listLeft) / (float) tableSpan, visualSlot);
+        drawSkeletonBar(rankLeft, yPos + 1, rankLeft + rankWidth, yPos + 8,
+                rankBaseRgb, rankHiRgb, rankShimmer, rowFade);
+
+        // Player head placeholder
+        float headShimmer = skeletonShimmerAt(now, (playerColumnLeft + 5 - listLeft) / (float) tableSpan, visualSlot);
+        int frameAlpha = Math.max(18, Math.min(110, (int) ((58.0F + headShimmer * 30.0F) * rowFade)));
+        Gui.drawRect(playerColumnLeft, yPos - 1, playerColumnLeft + headSize, yPos - 1 + headSize,
+                (frameAlpha << 24) | 0x00111820);
+        drawSkeletonBar(playerColumnLeft + 1, yPos, playerColumnLeft + headSize - 1, yPos + headSize - 2,
+                0x4A5A6B, 0x879DB4, headShimmer, rowFade);
+
+        // Optional kit level pill
+        if (showKitLevelSlot) {
+            int pillWidth = 14;
+            int pillLeft = levelSlotX + (KIT_LEVEL_MARKER_SLOT_WIDTH - pillWidth) / 2;
+            float levelShimmer = skeletonShimmerAt(now, (pillLeft - listLeft) / (float) tableSpan, visualSlot);
+            drawSkeletonBar(pillLeft, yPos + 1, pillLeft + pillWidth, yPos + 8,
+                    0x5A6674, 0x99AEBF, levelShimmer, rowFade);
+        }
+
+        // Kill count prefix pill + username bar
+        if (nameAreaWidth >= 24) {
+            int prefixWidth = Math.min(26, Math.max(14, nameAreaWidth / 4));
+            float prefixShimmer = skeletonShimmerAt(now, (nameAreaLeft - listLeft) / (float) tableSpan, visualSlot);
+            drawSkeletonBar(nameAreaLeft, yPos + 1, nameAreaLeft + prefixWidth, yPos + 8,
+                    0x495B6E, 0x7E98B3, prefixShimmer, rowFade);
+
+            int nameLeft = nameAreaLeft + prefixWidth + 5;
+            int remaining = nameAreaRight - nameLeft;
+            if (remaining >= 18) {
+                int desiredNameWidth = nameWidths[patternIndex % nameWidths.length];
+                int nameWidth = Math.max(18, Math.min(remaining, desiredNameWidth));
+                float nameShimmer = skeletonShimmerAt(now, (nameLeft + nameWidth * 0.5F - listLeft) / (float) tableSpan, visualSlot);
+                drawSkeletonBar(nameLeft, yPos + 1, nameLeft + nameWidth, yPos + 8,
+                        0x556678, 0x9AB0C7, nameShimmer, rowFade);
+            }
+        }
+
+        // Metric column bars
+        if (showOverallColumns) {
+            int columnLeft = overallColumnsLeft;
+            for (int i = 0; i < overallColumns.size(); i++) {
+                int columnWidth = overallColumnWidths[i];
+                String key = overallColumns.get(i);
+                int colRgb = overallColumnColor(key) & 0x00FFFFFF;
+                int permille = metricPermille[(patternIndex + i * 3) % metricPermille.length];
+                int barWidth = Math.max(12, Math.min(columnWidth - 6, (columnWidth * permille) / 1000));
+                int barLeft = columnLeft + (columnWidth - barWidth) / 2;
+                float colShimmer = skeletonShimmerAt(now,
+                        (columnLeft + columnWidth * 0.5F - listLeft) / (float) tableSpan, visualSlot);
+                drawSkeletonBar(barLeft, yPos + 1, barLeft + barWidth, yPos + 8,
+                        blendRgb(0x495868, colRgb, 0.25F),
+                        blendRgb(0x8FA6BE, colRgb, 0.45F),
+                        colShimmer, rowFade);
+                columnLeft += columnWidth + 4;
+            }
+        } else if (metricColumnWidth > 12) {
+            int metricRgb = metricValueColor(currentMetric()) & 0x00FFFFFF;
+            int permille = metricPermille[patternIndex % metricPermille.length];
+            int barWidth = Math.max(24, Math.min(metricColumnWidth - 8, (metricColumnWidth * permille) / 1000));
+            int barLeft = metricCenter - barWidth / 2;
+            float metricShimmer = skeletonShimmerAt(now,
+                    (metricCenter - listLeft) / (float) tableSpan, visualSlot);
+            drawSkeletonBar(barLeft, yPos + 1, barLeft + barWidth, yPos + 8,
+                    blendRgb(0x495868, metricRgb, 0.25F),
+                    blendRgb(0x8FA6BE, metricRgb, 0.45F),
+                    metricShimmer, rowFade);
+        }
+    }
+
+    private void drawEmptyLeaderboardState(int centerX) {
+        String title = activeKitFilterCount() > 0 || !appliedSearch.isEmpty()
+                ? "No players matched the current filters."
+                : "No leaderboard players found.";
+        drawCenteredString(fontRendererObj, title, centerX, listTop + 18, TEXT);
+        drawCenteredString(fontRendererObj, EnumChatFormatting.GRAY + "Try adjusting your filters or click Refresh.",
+                centerX, listTop + 32, MUTED);
+    }
+
+    private static float skeletonShimmerAt(long now, float normalizedX, int row) {
+        double waveCenter = ((now % 1650L) / 1650.0D) * 1.6D - 0.3D;
+        double target = waveCenter - row * 0.032D;
+        double dist = Math.abs(normalizedX - target);
+        if (dist >= 0.28D) return 0.0F;
+        return (float) (0.5D * (1.0D + Math.cos(Math.PI * dist / 0.28D)));
+    }
+
+    private static void drawSkeletonBar(int left, int top, int right, int bottom,
+                                        int baseRgb, int highlightRgb, float shimmer, float rowFade) {
+        if (right <= left || bottom <= top) return;
+        int rgb = blendRgb(baseRgb, highlightRgb, shimmer);
+        int alpha = Math.max(14, Math.min(165, (int) ((52.0F + shimmer * 68.0F) * rowFade)));
+        Gui.drawRect(left, top, right, bottom, (alpha << 24) | (rgb & 0x00FFFFFF));
+    }
+
+    private static int blendRgb(int fromRgb, int toRgb, float t) {
+        float clamped = Math.max(0.0F, Math.min(1.0F, t));
+        int r1 = (fromRgb >> 16) & 0xFF;
+        int g1 = (fromRgb >> 8) & 0xFF;
+        int b1 = fromRgb & 0xFF;
+        int r2 = (toRgb >> 16) & 0xFF;
+        int g2 = (toRgb >> 8) & 0xFF;
+        int b2 = toRgb & 0xFF;
+        int r = Math.round(r1 + (r2 - r1) * clamped);
+        int g = Math.round(g1 + (g2 - g1) * clamped);
+        int b = Math.round(b1 + (b2 - b1) * clamped);
+        return (r << 16) | (g << 8) | b;
     }
 
     private void drawLeaderboardLoadError(int centerX) {
@@ -4096,6 +4376,12 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
                     return;
                 }
                 if (finalPlayer == null) return;
+                if (profileScreen instanceof TeamPlayerProfileGUI) {
+                    GoStatsBlitzClient.Snapshot refreshedSnapshot = GoStatsBlitzClient.getCachedSnapshot(normalizedUuid);
+                    if (refreshedSnapshot != null) {
+                        ((TeamPlayerProfileGUI) profileScreen).applyRefreshedSnapshot(refreshedSnapshot);
+                    }
+                }
                 int newIndex = replacePlayerRow(player, finalPlayer);
                 if (newIndex < 0) return;
                 long remaining = HypixelPlayerRequests.cooldownRemainingMs(normalizedUuid);
@@ -4338,10 +4624,13 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         }
         int rowLeft = listContentRight > listContentLeft ? listContentLeft : panelLeft;
         int rowRight = listContentRight > listContentLeft ? listContentRight : panelRight - 8;
+        int aboveSkeleton = loadingAboveSkeletonRows();
         if (mouseButton == 1 && !top350Refreshing && openSelectorId == -1 && mouseX >= rowLeft
                 && mouseX <= rowRight && mouseY >= listTop && mouseY < listBottom) {
-            int row = (mouseY - listTop) / leaderboardRowHeight() + scrollOffset;
-            if (row >= scrollOffset && row < Math.min(players.size(), scrollOffset + visibleRows)) {
+            int clickedSlot = (mouseY - listTop) / leaderboardRowHeight();
+            int row = scrollOffset + (clickedSlot - aboveSkeleton);
+            if (clickedSlot >= aboveSkeleton && clickedSlot < visibleRows
+                    && row >= scrollOffset && row < players.size()) {
                 refreshPlayer(players.get(row));
                 return;
             }
@@ -4362,8 +4651,10 @@ public final class LeaderboardGUI extends GuiScreen implements GoStatsLeaderboar
         }
         if (mouseButton == 0 && mouseX >= rowLeft && mouseX <= rowRight
                 && mouseY >= listTop && mouseY <= listBottom) {
-            int row = (mouseY - listTop) / leaderboardRowHeight() + scrollOffset;
-            if (row >= scrollOffset && row < Math.min(players.size(), scrollOffset + visibleRows)) {
+            int clickedSlot = (mouseY - listTop) / leaderboardRowHeight();
+            int row = scrollOffset + (clickedSlot - aboveSkeleton);
+            if (clickedSlot >= aboveSkeleton && clickedSlot < visibleRows
+                    && row >= scrollOffset && row < players.size()) {
                 GoStatsLeaderboardClient.Player selected = players.get(row);
                 TeamPlayerProfileGUI profile = new TeamPlayerProfileGUI(this,
                         new TeamSpamManager.Player(selected.username, selected.uuid), null, false, true, selected);

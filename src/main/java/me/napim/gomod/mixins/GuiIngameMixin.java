@@ -79,6 +79,11 @@ public abstract class GuiIngameMixin {
     @ModifyVariable(method = "setRecordPlaying(Ljava/lang/String;Z)V", at = @At("HEAD"),
             argsOnly = true, ordinal = 0, require = 0)
     private String gomod$rewriteDisguiseRecordPlayingSource(String text) {
+        String qStatusOverride = me.napim.gomod.features.BlitzPregamePlayerToggle
+                .getHeldQueueStatusHudText(Minecraft.getMinecraft());
+        if (qStatusOverride != null) {
+            return qStatusOverride;
+        }
         return gomod$rewriteHudDisguiseText(text);
     }
 
@@ -86,6 +91,11 @@ public abstract class GuiIngameMixin {
     @ModifyVariable(method = "setRecordPlaying(Lnet/minecraft/util/IChatComponent;Z)V", at = @At("HEAD"),
             argsOnly = true, ordinal = 0, require = 0)
     private IChatComponent gomod$rewriteSpectatorTargetActionBar(IChatComponent component) {
+        String qStatusOverride = me.napim.gomod.features.BlitzPregamePlayerToggle
+                .getHeldQueueStatusHudText(Minecraft.getMinecraft());
+        if (qStatusOverride != null) {
+            return new net.minecraft.util.ChatComponentText(qStatusOverride);
+        }
         IChatComponent rewritten = ReplayPlayerSelectorDisplay.rewriteLiveSpectatorTargetComponent(component);
         return rewritten == null ? component : rewritten;
     }

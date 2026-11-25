@@ -2121,13 +2121,12 @@ public class KillCounter {
     }
 
     /**
-     * Enemy kit observation also feeds detailed end-game rows. Keep collecting for those rows even when the
-     * independent TAB option is off; {@link #getEnemyPlayerKit(String)} still owns the TAB visibility gate.
+     * Enemy kit observation (both early-game gear scans and spectator Teleporter reads) also feeds detailed
+     * end-game rows. Keep collecting whenever Detailed end-game score is enabled even when the independent TAB
+     * option is off; {@link #getEnemyPlayerKit(String)} still owns the TAB visibility gate.
      */
-    private static boolean shouldCollectEnemyKits() {
-        return isShowEnemyKits()
-                || ConfigManager.isBlitzExtendedResultsEnabled()
-                && ConfigManager.isBlitzExtendedResultsMorePositionsEnabled();
+    public static boolean shouldCollectEnemyKits() {
+        return isShowEnemyKits() || ConfigManager.isBlitzExtendedResultsEnabled();
     }
 
     /** Prestige II kit marker in TAB ({@link #formatKitLevel} maps {@code ??} → this). */
@@ -4949,8 +4948,9 @@ public class KillCounter {
 
     /**
      * Returns a match-scoped kit name for Blitz result rows when gomod actually tracked it during the game.
-     * Uses trusted kit-selection/local/teammate kit data first, then the enemy-kit cache populated only from
-     * actual kit item names seen on player gear during the early detection window.
+     * Uses trusted kit-selection/local/teammate kit data first, then the enemy-kit cache populated from
+     * actual kit item names seen on player gear during the early detection window and from the live spectator
+     * Teleporter menu.
      */
     public static String getTrackedKitForResults(String playerName) {
         if (playerName == null || playerName.trim().isEmpty()) {
@@ -8988,7 +8988,7 @@ public class KillCounter {
      * available after the enemy entities unload, so its server-provided row is authoritative for TAB fallback.
      */
     public static boolean observeEnemyKitFromTeleporter(String playerName, String[] rowText) {
-        if (!isShowEnemyKits() || playerName == null || playerName.trim().isEmpty()
+        if (!shouldCollectEnemyKits() || playerName == null || playerName.trim().isEmpty()
                 || isLocalClientAnyKnownIgn(playerName) || getCaseInsensitiveValue(playerKits, playerName) != null) {
             return false;
         }
@@ -10098,6 +10098,7 @@ public class KillCounter {
         String w = EnumChatFormatting.WHITE.toString();
         lines.add(Main.CHAT_PREFIX + EnumChatFormatting.GOLD + "Enemy kit debug " + g + "(copy this block)");
         lines.add(g + "showEnemyKits=" + isShowEnemyKits()
+                + " collectEnemyKits=" + shouldCollectEnemyKits()
                 + " configKillCounter=" + ConfigManager.isKillCounterEnabled()
                 + " runtimeEnabled=" + enabled
                 + " gameHasEnded=" + gameHasEnded
